@@ -52,6 +52,17 @@ kernel sürümü ve açılış nesliyle eşleşen yeni kayıttan değerlendirilm
 
 ## Derleme ve kurulum sınırı
 
+4 Ekim 2026 tanı derlemesi başarılı:
+https://github.com/ylmzer/lisa-kernel/actions/runs/37155115623
+Kaynak `c18e4724dcde865c83e07c3f93e4c9ee39eef790`, kernel
+`5.4.302-lisa-bootdiag+`. Tüm CI sağlama toplamları, ARM64 Image/ELF,
+etkin kaydedici, son kernel sembolleri, ZIP/Image eşleşmesi ve cmdline yamasının
+tek boot yazımından önce uygulanması yerelde kontrol edildi. ZIP SHA-256:
+`4bb650363f697a7872b9f7a2ae91eb89c30ec136483b898b8ffa0066872e855c`.
+Paket CI sonrasında değiştirilmedi. Cihaz bağlantısı kesik olduğundan kurulum,
+Android açılışı ve gerçek kayıt yazımı henüz test edilmedi. İlk tanı çalışması
+37154298029, UFS blok hizalaması güncellenirken cihazda kullanılmadan iptal edildi.
+
 Bu değişiklik kayıp logları elde etmek içindir. Kernelin Android uyumluluğunu
 düzelttiği iddia edilmez. Önce CI derlemesi, kayıt çözümleyicisi ve ZIP/cmdline
 kontrolleri tamamlanmalıdır. İlk iki ZIP gibi otomatik yükleme yapılmaz.

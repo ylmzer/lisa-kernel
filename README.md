@@ -10,8 +10,11 @@ Xiaomi 11 Lite 5G NE (`lisa` / SM7325) için bağımsız Linux 5.4.302 kaynak re
 
 **Güncel öncelik: Android açılışı.** İkinci testte kernel TWRP'de çalıştı,
 Android açılışı yeniden başlama döngüsüne girdi. [Açılış tanı kaydedicisi](.lisa/bootlog.md)
-eklendi; [tanı derlemesi](https://github.com/ylmzer/lisa-kernel/actions/runs/37154298029)
-doğrulanıyor. Kaydedici bir açılış düzeltmesi değildir; cihaz testi henüz yapılmadı.
+eklendi; [tanı derlemesi](https://github.com/ylmzer/lisa-kernel/actions/runs/37155115623)
+ve yerel ZIP/Image doğrulaması başarılı. Kaydedici bir açılış düzeltmesi değildir;
+cihaz testi henüz yapılmadı. Yeni paket `lisa-bootdiag.zip`, sürüm
+`5.4.302-lisa-bootdiag+`, kaynak `c18e4724dcde865c83e07c3f93e4c9ee39eef790`.
+ZIP SHA-256: `4bb650363f697a7872b9f7a2ae91eb89c30ec136483b898b8ffa0066872e855c`.
 
 **Derleme durumu:** Tam kernel derlemesi ve AnyKernel3 ZIP üretimi başarılı.
 İndirilen çıktılar için SHA-256, ARM64 biçimi, temel ayarlar, son kerneldeki
