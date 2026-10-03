@@ -9,6 +9,21 @@ uyumsuzluğu henüz ayırt edilmedi; pstore/ramoops ve TWRP kurulum kayıtları
 alınmadan kesin neden söylenemez. Bu ZIP çalışan bir kernel olarak kullanılmamalı.
 İlk adım kurulum öncesi Boot yedeğine dönmektir. Chromium testi yapılamadı.
 
+## İkinci cihaz testi: recovery açılıyor, Android açılmıyor
+
+3 Ekim 2026 ikinci kurulum canlı izlendi. ZIP SHA-256 ve kurulum sonrası
+boot_a içindeki Image SHA-256 doğrulanmış CI çıktılarıyla eşleşti. TWRP
+kurulum hedefi boot_a, updater RC=0. Kullanıcı System açılışında yeniden
+başlamalar bildirdi ve recovery'yi kendisi açtı. Yeni TWRP oturumunda çalışan
+kernel `5.4.302-lisa-ylmzer+` olarak doğrulandı: recovery açılışı başarılı,
+Android sistem açılışı başarısızdır.
+
+Kurulum öncesi/sonrası boot görüntüleri ve TWRP logları yerel private alanda
+saklandı. Ramdiskte mevcut dosyaların içerikleri korunmuş; symlink metadata
+ve CPIO düzeni değişmiştir. Pstore boş ve last_kmsg yok. Oops bölümündeki
+eski kayıtlar bu testin panic nedeni olarak kabul edilmedi. Normal Android
+açılışının ilk hatası henüz elde edilemedi; Chrome karşılaştırması yapılmadı.
+
 3 Ekim 2026'da ilk `config-only` GitHub çalışması başarılı oldu:
 https://github.com/ylmzer/lisa-kernel/actions/runs/37119973231
 
