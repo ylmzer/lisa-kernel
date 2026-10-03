@@ -1,0 +1,34 @@
+# HyperOS port uyumluluğu: doğrulanmış farklar
+
+3 Ekim 2026'da ilk `config-only` GitHub çalışması başarılı oldu:
+https://github.com/ylmzer/lisa-kernel/actions/runs/37119973231
+
+Bu sonuç temel sürücü seçeneklerinin korunduğunu gösterir. Tam Tachyon veya
+HyperOS uyumluluğunu göstermez. Ayar karşılaştırmasında aşağıdaki etkin Tachyon
+seçeneklerinin bu açık kaynak ağacında karşılığı bulunmadı:
+
+- `CONFIG_CRYPTO_LZ4KD`, `CONFIG_LZ4KD_COMPRESS`, `CONFIG_LZ4KD_DECOMPRESS`.
+- `CONFIG_MILLET`, `CONFIG_MIHW`, `CONFIG_MI_RECLAIM`, `CONFIG_CAM_RECLAIM`.
+- `CONFIG_BOARD_XIAOMI_LISA`, `CONFIG_BOARD_XIAOMI_YUPIK`,
+  `CONFIG_USE_COMMON_CAMERA` ve bazı OEM board seçenekleri.
+- Speculative page fault ve bazı derleyiciye bağlı seçenekler.
+- KernelSU seçenekleri; ilk tanı sürümünde root desteği bilinçli olarak yoktur.
+
+Telefonun `/sys/block/zram0/comp_algorithm` çıktısında etkin algoritma `lz4kd`.
+Mevcut ZRAM swap alanı yaklaşık 8 GiB. Bu temel kernelde `lz4kd` bulunmadığı
+için ROM'un swap kurulum yolu ayrıca uyarlanmalı veya uygun açık kaynak
+algoritma desteği eklenmelidir. MiCode'un orijinal `lisa-r-oss` dalında da
+`lib` ve `crypto` dizinlerinde `lz4kd` bulunmadı; kaynak adı varsayılamaz.
+
+Diğer OEM seçenekleri için sadece ayar satırı eklemek yeterli değildir.
+Karşılık gelen kod, bağımlılıklar ve ROM'un beklediği kullanıcı alanı
+arayüzleri incelenmelidir. Aynı isimli ayarın başka bir cihazın kaynaklarında
+bulunması, lisa için uyumluluk kanıtı değildir.
+
+Chromium sorunu için native zygote çökmesi gözlendi; belirli bir kernel
+fonksiyonunun neden olduğu gösterilmedi. Yeni kaynak ağacı ve derleyici
+Tachyon'dan farklı olduğundan, rootsuz derlemede tarayıcının çalışması tek
+başına KernelSU'nun hatanın nedeni olduğunu kanıtlamaz.
+
+Bu repo tam kaynak ve derleme altyapısı sağlar. İlk ZIP bir tanı çıktısıdır;
+telefonun günlük kullanım kernelinin yerine geçtiği henüz doğrulanmamıştır.
