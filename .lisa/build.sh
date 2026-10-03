@@ -3,7 +3,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 MODE="${1:-build}"
-case "$MODE" in config-only|build) ;; *) echo "Usage: $0 [config-only|build]" >&2; exit 2;; esac
+case "$MODE" in config-only|vendor-only|build) ;; *) echo "Usage: $0 [config-only|vendor-only|build]" >&2; exit 2;; esac
 OUT="$ROOT/out/lisa"
 DIST="$ROOT/dist/lisa"
 mkdir -p "$OUT" "$DIST"
@@ -16,13 +16,22 @@ for tool in "clang${LLVM_SUFFIX}" "ld.lld${LLVM_SUFFIX}" \
   aarch64-linux-gnu-gcc arm-linux-gnueabi-gcc; do
   command -v "$tool" >/dev/null || { echo "Missing build tool: $tool" >&2; exit 1; }
 done
+KERNEL_CC="clang${LLVM_SUFFIX}"
+if [ "${USE_CCACHE:-0}" = 1 ]; then
+  command -v ccache >/dev/null || { echo 'Missing build tool: ccache' >&2; exit 1; }
+  export CCACHE_DIR="${CCACHE_DIR:-$ROOT/out/ccache}"
+  export CCACHE_BASEDIR="$ROOT"
+  export CCACHE_COMPILERCHECK=content
+  ccache --max-size=3G
+  KERNEL_CC="ccache $KERNEL_CC"
+fi
 export ARCH=arm64
 export KBUILD_BUILD_USER=ylmzer
 export KBUILD_BUILD_HOST=lisa-builder
 export KBUILD_BUILD_VERSION=1
 export KBUILD_BUILD_TIMESTAMP="$(git show -s --format=%cD HEAD)"
 ARGS=(O="$OUT" ARCH=arm64 LLVM=1 LLVM_IAS=1
-  CC="clang${LLVM_SUFFIX}" LD="ld.lld${LLVM_SUFFIX}"
+  CC="$KERNEL_CC" LD="ld.lld${LLVM_SUFFIX}"
   AR="llvm-ar${LLVM_SUFFIX}" NM="llvm-nm${LLVM_SUFFIX}"
   LLVM_NM="$LLVM_NM"
   OBJCOPY="llvm-objcopy${LLVM_SUFFIX}" OBJDUMP="llvm-objdump${LLVM_SUFFIX}"
@@ -47,8 +56,22 @@ make "${ARGS[@]}" olddefconfig 2>&1 | tee "$DIST/config.log"
 cp "$OUT/.config" "$DIST/resolved.config"
 python3 .lisa/config_audit.py "$DIST/requested.config" "$DIST/resolved.config" \
   > "$DIST/config-diff.txt"
+python3 .lisa/techpack_audit.py > "$DIST/techpack-config.txt"
 if [ "$MODE" = config-only ]; then
   echo 'Config audit completed; this is not a compiled or device-tested kernel.'
+  exit 0
+fi
+make -j"${JOBS:-$(nproc)}" "${ARGS[@]}" \
+  techpack/display/ techpack/audio/ techpack/camera/ 2>&1 | tee "$DIST/vendor-build.log"
+"$LLVM_NM" --defined-only "$OUT/techpack/display/msm/msm_drm.o" \
+  > "$DIST/display-symbols.txt"
+for symbol in mi_disp_register_client mi_disp_unregister_client; do
+  grep -Eq "[[:space:]]${symbol}$" "$DIST/display-symbols.txt" || {
+    echo "Missing built-in display provider: $symbol" >&2; exit 1;
+  }
+done
+if [ "$MODE" = vendor-only ]; then
+  echo 'Built-in vendor drivers and display providers verified.'
   exit 0
 fi
 make -j"${JOBS:-$(nproc)}" "${ARGS[@]}" Image dtbs 2>&1 | tee "$DIST/build.log"

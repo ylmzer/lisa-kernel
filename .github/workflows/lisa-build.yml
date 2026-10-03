@@ -28,7 +28,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y bc bison flex make gcc g++ libssl-dev libelf-dev \
             libncurses-dev python3 rsync zip clang-14 lld-14 llvm-14 \
-            gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi
+            gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi ccache
+      - name: Restore compiler cache
+        if: inputs.mode == 'build'
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: out/ccache
+          key: ${{ runner.os }}-lisa-clang14-${{ github.run_id }}
+          restore-keys: ${{ runner.os }}-lisa-clang14-
       - name: Verify case-sensitive upstream files
         run: python3 .lisa/tests/source_integrity.py
       - name: Verify LZ4KD page round-trips
@@ -39,7 +46,14 @@ jobs:
             .lisa/tests/lz4kd_roundtrip.c lib/lz4kd/lz4kd_encode.c lib/lz4kd/lz4kd_decode.c \
             -o out/tests/lz4kd-roundtrip
           out/tests/lz4kd-roundtrip | tee dist/lisa/codec-test.txt
+      - name: Compile and verify built-in vendor drivers
+        if: inputs.mode == 'build'
+        env:
+          USE_CCACHE: '1'
+        run: bash .lisa/build.sh vendor-only
       - name: Configure and build
+        env:
+          USE_CCACHE: '1'
         run: bash .lisa/build.sh '${{ inputs.mode }}'
       - name: Checkout pinned AnyKernel3 installer
         if: inputs.mode == 'build' && inputs.package
@@ -68,6 +82,17 @@ jobs:
           PY
           cd dist/lisa
           sha256sum lisa-diagnostic.zip >> SHA256SUMS
+      - name: Record compiler cache statistics
+        if: always() && inputs.mode == 'build'
+        run: |
+          mkdir -p dist/lisa
+          CCACHE_DIR="$GITHUB_WORKSPACE/out/ccache" ccache --show-stats > dist/lisa/ccache-stats.txt
+      - name: Save compiler cache even after a build failure
+        if: always() && inputs.mode == 'build'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: out/ccache
+          key: ${{ runner.os }}-lisa-clang14-${{ github.run_id }}
       - name: Preserve logs and artifacts
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

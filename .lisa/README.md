@@ -105,6 +105,15 @@ fonksiyonlarıyla isim çakıştırıyordu. Wi-Fi'nin kendi hazır olma kontrol�
 adlandırıldı; bildirimler ve ilgili çağrılar birlikte güncellendi. Platformun
 `ipa_is_ready` API'si ve kernelin NL80211 kodu değiştirilmedi.
 
+Vendor ekran, ses ve kamera seçenekleri yalnızca `.config` içinde değildir;
+techpack Makefile profilleri ayrıca `m` seçiyordu. Lisa'nın lahaina/yupik
+profilleri yerleşik derlemeye alındı. Genel DRM sürücüsünü açmak yerine
+Qualcomm techpack ekran sağlayıcısı derlenir. `techpack_audit.py` bu ayrı
+profilleri denetler; tam derlemeden önce vendor dizinleri derlenir ve Xiaomi
+ekran bildirim sembollerinin üretildiği doğrulanır. Bunlar cihaz testi yerine
+geçmez. CI derleyici önbelleğini başarısız çalışmalarda da saklar; sonraki
+düzeltmeler aynı nesneleri yeniden derlemek zorunda kalmaz.
+
 Windows'ta test öncesi ve sonrası kayıt almak için:
 
 ```powershell
