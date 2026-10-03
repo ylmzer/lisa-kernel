@@ -70,3 +70,14 @@ açılış, sayfa yükleme ve video oynatmayı dene; logcat crash ve kernel logu
 `zygote_next` / `libzygote_sys` ve vendor kullanıcı alanı ayrıca incelenmelidir.
 
 Ham cihaz logları ve kişisel bilgiler bu repoya dahil edilmez.
+
+Windows'ta test öncesi ve sonrası kayıt almak için:
+
+```powershell
+& .\.lisa\capture-device.ps1
+```
+
+Betiğin yaptığı işlemler yalnızca cihaz bilgilerini okumak ve yerel dosyalara
+kaydetmektir. Sonuçlar Git tarafından dışlanan `.lisa/private/captures` altında
+tutulur. `-AdbPath` ile ADB yolu, `-OutputDirectory` ile farklı kayıt konumu
+belirtilebilir. Farklı bir konum seçilirse kayıtların gizliliğini ayrıca koruyun.
