@@ -34,3 +34,10 @@ başına KernelSU'nun hatanın nedeni olduğunu kanıtlamaz.
 
 Bu repo tam kaynak ve derleme altyapısı sağlar. İlk ZIP bir tanı çıktısıdır;
 telefonun günlük kullanım kernelinin yerine geçtiği henüz doğrulanmamıştır.
+
+İlk başarılı tam derleme: https://github.com/ylmzer/lisa-kernel/actions/runs/37129546878
+Kaynak commit: `3a12e2b7a58f89c0f332f82978ee3de21efc7557`.
+Techpack ekran, ses ve kamera profilleri yerleşik olarak derlendi. Genel DRM
+sürücüsünü ayrıca açmadan Xiaomi ekran bildirim fonksiyonları son kernelde
+doğrulandı. LTO, son bağlama, codec testi ve ZIP üretimi başarılıdır. Telefonda
+açılış, donanım ve tarayıcı davranışı henüz test edilmemiştir.

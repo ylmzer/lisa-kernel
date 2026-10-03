@@ -24,8 +24,13 @@ setuid kancası bir hipotezdir; kesin neden veya doğrulanmış düzeltme değil
 
 Bu kaynak ağacında KernelSU/ReSukiSU eklenmemiştir. Root gerektiren modüller
 ilk tanı derlemesinde çalışmaz. Telefonda test edilmeden uyumluluk iddiası yoktur.
-İlk GitHub ayar denetimi başarılıdır. Mevcut ROM'un kullandığı `lz4kd` desteği
-eklendi; codec testi ve tam derleme ayrıca doğrulanıyor. Diğer Xiaomi ekleri
+İlk GitHub ayar denetimi ve [tam kernel derlemesi](https://github.com/ylmzer/lisa-kernel/actions/runs/37129546878)
+başarılıdır. `3a12e2b7a58f89c0f332f82978ee3de21efc7557` kaynak commit'inden
+`5.4.302-lisa-ylmzer+` Image ve tanı ZIP'i üretildi. İndirilen çıktılarda
+SHA-256, ARM64 Image/ELF biçimi, gerekli ayarlar, son kerneldeki ekran bildirim
+fonksiyonları ve ZIP içindeki Image eşleşmesi doğrulandı.
+Mevcut ROM'un kullandığı `lz4kd` desteği eklendi; dört sayfa sıkıştırma/açma
+testi ve tam derleme geçti. Bunlar cihazda açılış veya Chromium testi değildir. Diğer Xiaomi ekleri
 için [uyumluluk farklarına](compatibility.md) bakın.
 
 ## GitHub üzerinde derleme
