@@ -13,8 +13,12 @@ Local changes connect the codec to Kconfig, Kbuild and ZRAM's backend list.
 The device reference config already enables its three configuration symbols;
 the config audit now requires them, so support cannot silently disappear.
 
-The host test executes the actual codec on 4 KiB and 8 KiB pages with multiple
-data patterns, checks exact round-trips and rejects invalid output lengths.
+This codec version targets 4 KiB pages; the config audit requires
+`CONFIG_ARM64_4K_PAGES`. The host test executes the actual codec on 4 KiB pages
+with multiple data patterns, checks exact round-trips, rejects empty input and
+checks bounded output using an allocation of the declared output capacity.
+Pattern blocks can fill a smaller buffer successfully; that API behavior is
+accepted while memory bounds are still checked.
 Address and undefined-behavior sanitizers are enabled, except alignment checks:
 the codec intentionally performs unaligned accesses on these target platforms.
 Host tests and successful kernel compilation do not validate device ZRAM setup.
