@@ -7,7 +7,8 @@ Bu sonuç temel sürücü seçeneklerinin korunduğunu gösterir. Tam Tachyon ve
 HyperOS uyumluluğunu göstermez. Ayar karşılaştırmasında aşağıdaki etkin Tachyon
 seçeneklerinin bu açık kaynak ağacında karşılığı bulunmadı:
 
-- `CONFIG_CRYPTO_LZ4KD`, `CONFIG_LZ4KD_COMPRESS`, `CONFIG_LZ4KD_DECOMPRESS`.
+- `CONFIG_CRYPTO_LZ4KD`, `CONFIG_LZ4KD_COMPRESS`, `CONFIG_LZ4KD_DECOMPRESS`
+  ilk temelde yoktu; aşağıda belirtilen açık kaynak uygulamayla eklendi.
 - `CONFIG_MILLET`, `CONFIG_MIHW`, `CONFIG_MI_RECLAIM`, `CONFIG_CAM_RECLAIM`.
 - `CONFIG_BOARD_XIAOMI_LISA`, `CONFIG_BOARD_XIAOMI_YUPIK`,
   `CONFIG_USE_COMMON_CAMERA` ve bazı OEM board seçenekleri.
@@ -15,9 +16,10 @@ seçeneklerinin bu açık kaynak ağacında karşılığı bulunmadı:
 - KernelSU seçenekleri; ilk tanı sürümünde root desteği bilinçli olarak yoktur.
 
 Telefonun `/sys/block/zram0/comp_algorithm` çıktısında etkin algoritma `lz4kd`.
-Mevcut ZRAM swap alanı yaklaşık 8 GiB. Bu temel kernelde `lz4kd` bulunmadığı
-için ROM'un swap kurulum yolu ayrıca uyarlanmalı veya uygun açık kaynak
-algoritma desteği eklenmelidir. MiCode'un orijinal `lisa-r-oss` dalında da
+Mevcut ZRAM swap alanı yaklaşık 8 GiB. Genel LZ4KD kodu, crypto arayüzü ve ZRAM
+backend bağlantısı bu repoya eklendi; [kaynak kaydı ve test kapsamı](lz4kd-source.md)
+ayrıca belgelendi. Kod ve ayarların derlenmesi, cihazda swap'ın başarıyla
+kurulduğunu kanıtlamaz. MiCode'un orijinal `lisa-r-oss` dalında da
 `lib` ve `crypto` dizinlerinde `lz4kd` bulunmadı; kaynak adı varsayılamaz.
 
 Diğer OEM seçenekleri için sadece ayar satırı eklemek yeterli değildir.

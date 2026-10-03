@@ -22,7 +22,8 @@ critical = (
     "ARCH_QCOM", "ARCH_YUPIK", "PINCTRL_SM7325", "SCSI_UFS_QCOM",
     "QCOM_KGSL", "TOUCHSCREEN_GOODIX_BRL", "INPUT_AW8624_HAPTIC",
     "CNSS_QCA6750", "SND_SOC", "SECCOMP", "SECCOMP_FILTER",
-    "MEMFD_CREATE", "MODVERSIONS",
+    "MEMFD_CREATE", "MODVERSIONS", "ZRAM", "CRYPTO_LZ4KD",
+    "LZ4KD_COMPRESS", "LZ4KD_DECOMPRESS",
 )
 failures = [f"CONFIG_{key}" for key in critical if resolved.get(f"CONFIG_{key}") != "y"]
 modules = [key for key, value in resolved.items() if value == "m"]

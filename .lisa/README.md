@@ -24,8 +24,9 @@ setuid kancası bir hipotezdir; kesin neden veya doğrulanmış düzeltme değil
 
 Bu kaynak ağacında KernelSU/ReSukiSU eklenmemiştir. Root gerektiren modüller
 ilk tanı derlemesinde çalışmaz. Telefonda test edilmeden uyumluluk iddiası yoktur.
-İlk GitHub ayar denetimi başarılıdır. Mevcut ROM'un kullandığı `lz4kd` ve bazı
-Xiaomi ekleri için [uyumluluk farklarına](compatibility.md) bakın.
+İlk GitHub ayar denetimi başarılıdır. Mevcut ROM'un kullandığı `lz4kd` desteği
+eklendi; codec testi ve tam derleme ayrıca doğrulanıyor. Diğer Xiaomi ekleri
+için [uyumluluk farklarına](compatibility.md) bakın.
 
 ## GitHub üzerinde derleme
 

@@ -13,6 +13,6 @@ yapılır. Mevcut ROM'un DTB/DTBO dosyaları otomatik değiştirilmez.
 
 Linux kernel belgeleri: [README](README), [COPYING](COPYING).
 
-Mevcut ROM'un kullandığı `lz4kd` ve bazı Xiaomi ekleri bu temelde bulunmuyor.
-[Doğrulanmış uyumluluk farklarını](.lisa/compatibility.md) ilk cihaz testinden
-önce inceleyin.
+Mevcut ROM'un kullandığı `lz4kd` için açık kaynak desteği eklendi; testleri ve
+tam derlemesi doğrulanıyor. Bazı Xiaomi ekleri bu temelde bulunmuyor.
+[Uyumluluk farklarını](.lisa/compatibility.md) ilk cihaz testinden önce inceleyin.
