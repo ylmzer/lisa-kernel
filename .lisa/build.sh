@@ -63,7 +63,7 @@ if [ "$MODE" = config-only ]; then
 fi
 make -j"${JOBS:-$(nproc)}" "${ARGS[@]}" \
   techpack/display/ techpack/audio/ techpack/camera/ 2>&1 | tee "$DIST/vendor-build.log"
-"$LLVM_NM" --defined-only "$OUT/techpack/display/msm/msm_drm.o" \
+"$LLVM_NM" --defined-only "$OUT/techpack/display/msm/built-in.a" \
   > "$DIST/display-symbols.txt"
 for symbol in mi_disp_register_client mi_disp_unregister_client; do
   grep -Eq "[[:space:]]${symbol}$" "$DIST/display-symbols.txt" || {
