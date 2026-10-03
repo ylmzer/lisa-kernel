@@ -1,11 +1,17 @@
 # lisa-kernel
 
+**Cihaz testi başarısız:** İlk tanı ZIP'i yüklendikten sonra kullanıcı boot
+logosunda tekrar tekrar yeniden başlama bildirdi. Bu ZIP mevcut ROM için
+çalışan kernel olarak kullanılmamalıdır. Açılış hatasının nedeni henüz
+kayıtlarla doğrulanmadı; önce kurulum öncesi Boot yedeğine dönüş ve hata
+kayıtlarının alınması gerekiyor.
+
 Xiaomi 11 Lite 5G NE (`lisa` / SM7325) için bağımsız Linux 5.4.302 kaynak reposu.
 
 **Derleme durumu:** Tam kernel derlemesi ve AnyKernel3 ZIP üretimi başarılı.
 İndirilen çıktılar için SHA-256, ARM64 biçimi, temel ayarlar, son kerneldeki
 ekran bildirim sembolleri ve ZIP/Image eşleşmesi doğrulandı.
-Chromium sorunu henüz çözülmüş veya cihazda doğrulanmış değildir.
+Chromium sorunu henüz çözülmüş değildir; ilk cihaz testi açılış aşamasında başarısızdır.
 
 - [İlk başarılı tam derleme](https://github.com/ylmzer/lisa-kernel/actions/runs/37129546878)
 - Derlenen kaynak: `3a12e2b7a58f89c0f332f82978ee3de21efc7557`.

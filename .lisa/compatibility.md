@@ -1,5 +1,14 @@
 # HyperOS port uyumluluğu: doğrulanmış farklar
 
+## İlk cihaz testi: açılış başarısız
+
+Kullanıcı ilk tanı ZIP'ini yükledikten sonra boot logosunda tekrar tekrar
+yeniden başlama bildirdi. Derleme başarısı mevcut ROM ile açılış uyumluluğu
+sağlamadı. Kernel panic, kullanıcı alanının yeniden başlatması veya paket/boot
+uyumsuzluğu henüz ayırt edilmedi; pstore/ramoops ve TWRP kurulum kayıtları
+alınmadan kesin neden söylenemez. Bu ZIP çalışan bir kernel olarak kullanılmamalı.
+İlk adım kurulum öncesi Boot yedeğine dönmektir. Chromium testi yapılamadı.
+
 3 Ekim 2026'da ilk `config-only` GitHub çalışması başarılı oldu:
 https://github.com/ylmzer/lisa-kernel/actions/runs/37119973231
 
@@ -40,4 +49,4 @@ Kaynak commit: `3a12e2b7a58f89c0f332f82978ee3de21efc7557`.
 Techpack ekran, ses ve kamera profilleri yerleşik olarak derlendi. Genel DRM
 sürücüsünü ayrıca açmadan Xiaomi ekran bildirim fonksiyonları son kernelde
 doğrulandı. LTO, son bağlama, codec testi ve ZIP üretimi başarılıdır. Telefonda
-açılış, donanım ve tarayıcı davranışı henüz test edilmemiştir.
+açılış testi başarısızdır; donanım ve tarayıcı davranışı doğrulanamamıştır.
