@@ -79,6 +79,22 @@ ayrıntılandırılmıştır.
 
 Ham cihaz logları ve kişisel bilgiler bu repoya dahil edilmez.
 
+## Kaynak bütünlüğü ve derleme düzeltmeleri
+
+Linux kaynaklarında yalnızca harf büyüklüğü farklı olan dosyalar bulunur
+(`xt_MARK.h` / `xt_mark.h` gibi). Windows çalışma kopyası bu dosyaları ayrı
+saklayamaz. Git ağacındaki 13 çift, sabitlenmiş upstream arşivinden içerikleri
+değiştirilmeden geri alınmıştır. CI, 26 dosyanın Git blob SHA-1 değerlerini
+`.lisa/tests/source_integrity.py` ile derlemeden önce doğrular.
+Bu Windows kopyasında ilgili yollar `skip-worktree` olarak işaretlidir;
+derlemek veya bu dosyaları düzenlemek için Linux dosya sisteminde yeni bir
+clone kullanın. Windows üzerinden kaynak ağacının tamamını yeniden eklemeyin.
+
+LTO'nun kullandığı `LLVM_NM` değişkeni derleyiciyle aynı sürüme açıkça
+sabitlenmiştir. Wi-Fi sürücüsünde `wlan_hdd_state_ctrl_param_create` fonksiyonu
+yalnızca çağrıldığı modül yapılandırmasında derlenir; yerleşik sürücü yolu ve
+derleyicinin hata denetimleri korunur.
+
 Windows'ta test öncesi ve sonrası kayıt almak için:
 
 ```powershell

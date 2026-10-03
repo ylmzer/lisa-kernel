@@ -29,6 +29,8 @@ jobs:
           sudo apt-get install -y bc bison flex make gcc g++ libssl-dev libelf-dev \
             libncurses-dev python3 rsync zip clang-14 lld-14 llvm-14 \
             gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi
+      - name: Verify case-sensitive upstream files
+        run: python3 .lisa/tests/source_integrity.py
       - name: Verify LZ4KD page round-trips
         run: |
           mkdir -p dist/lisa out/tests

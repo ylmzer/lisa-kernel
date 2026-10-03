@@ -8,6 +8,14 @@ OUT="$ROOT/out/lisa"
 DIST="$ROOT/dist/lisa"
 mkdir -p "$OUT" "$DIST"
 LLVM_SUFFIX="${LLVM_SUFFIX:--14}"
+export LLVM_NM="llvm-nm${LLVM_SUFFIX}"
+for tool in "clang${LLVM_SUFFIX}" "ld.lld${LLVM_SUFFIX}" \
+  "llvm-ar${LLVM_SUFFIX}" "$LLVM_NM" "llvm-objcopy${LLVM_SUFFIX}" \
+  "llvm-objdump${LLVM_SUFFIX}" "llvm-strip${LLVM_SUFFIX}" \
+  "llvm-readelf${LLVM_SUFFIX}" "clang++${LLVM_SUFFIX}" \
+  aarch64-linux-gnu-gcc arm-linux-gnueabi-gcc; do
+  command -v "$tool" >/dev/null || { echo "Missing build tool: $tool" >&2; exit 1; }
+done
 export ARCH=arm64
 export KBUILD_BUILD_USER=ylmzer
 export KBUILD_BUILD_HOST=lisa-builder
@@ -16,6 +24,7 @@ export KBUILD_BUILD_TIMESTAMP="$(git show -s --format=%cD HEAD)"
 ARGS=(O="$OUT" ARCH=arm64 LLVM=1 LLVM_IAS=1
   CC="clang${LLVM_SUFFIX}" LD="ld.lld${LLVM_SUFFIX}"
   AR="llvm-ar${LLVM_SUFFIX}" NM="llvm-nm${LLVM_SUFFIX}"
+  LLVM_NM="$LLVM_NM"
   OBJCOPY="llvm-objcopy${LLVM_SUFFIX}" OBJDUMP="llvm-objdump${LLVM_SUFFIX}"
   STRIP="llvm-strip${LLVM_SUFFIX}" READELF="llvm-readelf${LLVM_SUFFIX}"
   HOSTCC="clang${LLVM_SUFFIX}" HOSTCXX="clang++${LLVM_SUFFIX}"
