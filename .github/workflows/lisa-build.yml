@@ -13,6 +13,9 @@ on:
         default: false
 permissions:
   contents: read
+defaults:
+  run:
+    shell: bash
 jobs:
   build:
     runs-on: ubuntu-22.04
@@ -30,7 +33,7 @@ jobs:
         run: |
           mkdir -p dist/lisa out/tests
           gcc -std=gnu11 -O2 -g -fsanitize=address,undefined -fno-sanitize=alignment \
-            -include .lisa/tests/codec_host.h -Iinclude/linux -Ilib/lz4kd \
+            -include .lisa/tests/codec_host.h -iquote include/linux -iquote lib/lz4kd \
             .lisa/tests/lz4kd_roundtrip.c lib/lz4kd/lz4kd_encode.c lib/lz4kd/lz4kd_decode.c \
             -o out/tests/lz4kd-roundtrip
           out/tests/lz4kd-roundtrip | tee dist/lisa/codec-test.txt

@@ -10,12 +10,14 @@ int main(void)
 {
 	unsigned char *input = calloc(1, 8192);
 	unsigned char *encoded = calloc(1, 16384);
-	unsigned char *decoded = calloc(1, 16384);
 	void *state = calloc(1, lz4kd_encode_state_bytes_min());
 	unsigned completed = 0;
 	uint32_t random = 0x6c697361;
-	assert(input && encoded && decoded && state);
+	assert(input && encoded && state);
 	for (unsigned page = 4096; page <= 8192; page *= 2) {
+		unsigned char *decoded = calloc(1, page);
+		unsigned char *small = calloc(1, page / 2);
+		assert(decoded && small);
 		for (unsigned pattern = 0; pattern < 5; ++pattern) {
 			for (unsigned i = 0; i < page; ++i) {
 				random ^= random << 13;
@@ -30,19 +32,20 @@ int main(void)
 			if (!compressed)
 				continue; /* The API may reject incompressible pages. */
 			assert(compressed <= 16384);
-			memset(decoded, 0x5a, 16384);
+			memset(decoded, 0x5a, page);
 			int length = lz4kd_decode(encoded, decoded, compressed, page);
 			assert(length == (int)page);
 			assert(memcmp(input, decoded, page) == 0);
-			assert(lz4kd_decode(encoded, decoded, compressed, page / 2) < 0);
+			assert(lz4kd_decode(encoded, small, compressed, page / 2) < 0);
 			assert(lz4kd_decode(encoded, decoded, 0, page) < 0);
 			++completed;
 		}
+		free(decoded);
+		free(small);
 	}
 	assert(completed >= 6);
 	free(input);
 	free(encoded);
-	free(decoded);
 	free(state);
 	printf("LZ4KD: %u page round-trips passed; invalid lengths rejected.\n", completed);
 	return 0;
