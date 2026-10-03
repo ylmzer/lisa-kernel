@@ -78,6 +78,8 @@ jobs:
           path: out/anykernel
       - name: Package diagnostic image
         if: inputs.mode == 'build' && inputs.package
+        env:
+          BOOT_LOG: ${{ inputs.boot_log && '1' || '0' }}
         run: |
           cp .lisa/anykernel.sh out/anykernel/anykernel.sh
           if [ '${{ inputs.boot_log }}' = true ]; then
@@ -86,9 +88,11 @@ jobs:
           cp dist/lisa/Image out/anykernel/Image
           python3 - <<'PY'
           from pathlib import Path
+          import os
           import zipfile
           root = Path('out/anykernel')
-          with zipfile.ZipFile('dist/lisa/lisa-diagnostic.zip', 'w', zipfile.ZIP_DEFLATED) as archive:
+          package_name = 'lisa-bootdiag.zip' if os.environ['BOOT_LOG'] == '1' else 'lisa-diagnostic.zip'
+          with zipfile.ZipFile('dist/lisa/' + package_name, 'w', zipfile.ZIP_DEFLATED) as archive:
               for path in sorted(root.rglob('*')):
                   relative = path.relative_to(root)
                   if not path.is_file() or any(part.startswith('.') for part in relative.parts):
@@ -98,7 +102,11 @@ jobs:
                   archive.write(path, relative.as_posix())
           PY
           cd dist/lisa
-          sha256sum lisa-diagnostic.zip >> SHA256SUMS
+          if [ "$BOOT_LOG" = 1 ]; then
+            sha256sum lisa-bootdiag.zip >> SHA256SUMS
+          else
+            sha256sum lisa-diagnostic.zip >> SHA256SUMS
+          fi
       - name: Record compiler cache statistics
         if: always() && inputs.mode == 'build'
         run: |

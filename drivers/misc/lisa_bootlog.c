@@ -20,6 +20,7 @@
 #define SLOT_BYTES (2UL * 1024 * 1024)
 #define SLOT_COUNT 8
 #define LOG_BYTES (1024UL * 1024)
+#define HEADER_BYTES 4096
 #define RUN_SECONDS 90
 
 struct bootlog_header {
@@ -35,6 +36,7 @@ static bool stopped;
 static struct block_device *logdev;
 static char *logbuf;
 static char *bounce;
+static char *headerbuf;
 static u64 generation, sequence;
 static DEFINE_MUTEX(log_lock);
 static struct delayed_work log_work;
@@ -55,7 +57,7 @@ static int transfer(void *data, size_t len, loff_t offset, bool write)
 {
 	char *bytes = data;
 
-	if ((len | offset) & 511)
+	if ((len | offset) & (HEADER_BYTES - 1))
 		return -EINVAL;
 	while (len) {
 		size_t n = min_t(size_t, len, 64 * 1024), pos;
@@ -111,7 +113,8 @@ static int open_log(void)
 	/* Refuse a whole disk, any other GPT label, or a different size. */
 	if (!logdev->bd_part || !logdev->bd_part->info ||
 	    strcmp((const char *)logdev->bd_part->info->volname, "oops") ||
-	    i_size_read(logdev->bd_inode) != PART_BYTES) {
+	    i_size_read(logdev->bd_inode) != PART_BYTES ||
+	    bdev_logical_block_size(logdev) > HEADER_BYTES) {
 		blkdev_put(logdev, FMODE_READ | FMODE_WRITE | FMODE_EXCL);
 		logdev = NULL;
 		return -ENODEV;
@@ -120,8 +123,9 @@ static int open_log(void)
 		loff_t offset = (loff_t)i * SLOT_BYTES;
 		u32 crc;
 
-		if (transfer(&hdr, sizeof(hdr), offset, false))
+		if (transfer(headerbuf, HEADER_BYTES, offset, false))
 			continue;
+		memcpy(&hdr, headerbuf, sizeof(hdr));
 		if (memcmp(hdr.magic, "LISABLG1", 8) ||
 		    le32_to_cpu(hdr.version) != 1 ||
 		    le32_to_cpu(hdr.length) > LOG_BYTES)
@@ -165,10 +169,12 @@ static int snapshot(void)
 	hdr.header_crc = cpu_to_le32(log_crc(&hdr, sizeof(hdr)));
 	/* Two alternating snapshots per boot, with four boots retained. */
 	offset = ((generation % 4) * 2 + (sequence % 2)) * SLOT_BYTES;
-	memset(logbuf + len, 0, ALIGN(len, 512) - len);
-	err = transfer(logbuf, ALIGN(len, 512), offset + sizeof(hdr), true);
+	memset(logbuf + len, 0, ALIGN(len, HEADER_BYTES) - len);
+	err = transfer(logbuf, ALIGN(len, HEADER_BYTES), offset + HEADER_BYTES, true);
+	memset(headerbuf, 0, HEADER_BYTES);
+	memcpy(headerbuf, &hdr, sizeof(hdr));
 	if (!err)
-		err = transfer(&hdr, sizeof(hdr), offset, true);
+		err = transfer(headerbuf, HEADER_BYTES, offset, true);
 	if (!err)
 		err = blkdev_issue_flush(logdev, GFP_KERNEL, NULL);
 	return err;
@@ -228,6 +234,7 @@ static int __init lisa_bootlog_init(void)
 	const char *model;
 
 	BUILD_BUG_ON(sizeof(struct bootlog_header) != 512);
+	BUILD_BUG_ON(PAGE_SIZE != HEADER_BYTES);
 	if (!enabled)
 		return 0;
 	if (of_property_read_string(of_root, "model", &model) ||
@@ -237,15 +244,18 @@ static int __init lisa_bootlog_init(void)
 	}
 	logbuf = vzalloc(LOG_BYTES);
 	bounce = kmalloc(64 * 1024, GFP_KERNEL);
-	if (!logbuf || !bounce) {
+	headerbuf = kmalloc(HEADER_BYTES, GFP_KERNEL);
+	if (!logbuf || !bounce || !headerbuf) {
 		vfree(logbuf);
 		kfree(bounce);
+		kfree(headerbuf);
 		return -ENOMEM;
 	}
 	INIT_DELAYED_WORK(&log_work, collect);
 	if (register_reboot_notifier(&reboot_nb)) {
 		vfree(logbuf);
 		kfree(bounce);
+		kfree(headerbuf);
 		return -EINVAL;
 	}
 	pr_info("lisa_bootlog: opt-in recorder armed for the first %d seconds\n", RUN_SECONDS);

@@ -28,6 +28,9 @@ alternatif snapshot, toplam dört açılış tutulur. Recovery açılışı ayr�
 nesil oluşturur; önceki açılışı hemen silmez. CRC'ler yarım yazılmış kayıtları
 ayırt eder. Çalışma zamanı kaydı henüz cihaz üzerinde doğrulanmadı.
 
+Başlık alanı ve blok I/O 4 KiB hizalıdır; UFS'nin 4 KiB mantıksal sektörünü
+destekler. Daha büyük mantıksal sektörlü bir hedefe yazmayı reddeder.
+
 Recovery'de `/dev/block/by-name/oops` bölümünü `dd ... status=none` ile
 salt okunur bilgisayara alın; kopyanın tam 16777216 bayt olduğunu doğrulayın.
 Yerel kopyayı şu araçla çözümleyin:

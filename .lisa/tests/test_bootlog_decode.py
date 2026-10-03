@@ -17,7 +17,7 @@ def put(data, generation, sequence, payload):
                                          b'5.4.302-lisa-bootdiag', b''))
     struct.pack_into('<I', header, 20, zlib.crc32(header))
     data[start:start + 512] = header
-    data[start + 512:start + 512 + len(payload)] = payload
+    data[start + bootlog.HEADER_BYTES:start + bootlog.HEADER_BYTES + len(payload)] = payload
     return start
 
 
@@ -26,7 +26,7 @@ class BootlogDecode(unittest.TestCase):
         data = bytearray(bootlog.PART_BYTES)
         put(data, 1, 1, b'init: previous\n')
         start = put(data, 1, 2, b'init: latest\n')
-        data[start + 512] ^= 1
+        data[start + bootlog.HEADER_BYTES] ^= 1
         records = bootlog.decode(data)
         self.assertEqual([(r['generation'], r['sequence']) for r in records], [(1, 1)])
 

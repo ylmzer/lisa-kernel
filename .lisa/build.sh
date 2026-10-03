@@ -43,6 +43,7 @@ ARGS=(O="$OUT" ARCH=arm64 LLVM=1 LLVM_IAS=1
   echo "upstream_commit=7ede20c8692e0e0fc044754429e33cfd1d75c40d"
   echo "mode=$MODE"
   echo "root_support=none"
+  echo "boot_log=${BOOT_LOG:-0}"
   echo "build_timestamp=$KBUILD_BUILD_TIMESTAMP"
   "clang${LLVM_SUFFIX}" --version
   "ld.lld${LLVM_SUFFIX}" --version
