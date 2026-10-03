@@ -95,6 +95,12 @@ sabitlenmiştir. Wi-Fi sürücüsünde `wlan_hdd_state_ctrl_param_create` fonksi
 yalnızca çağrıldığı modül yapılandırmasında derlenir; yerleşik sürücü yolu ve
 derleyicinin hata denetimleri korunur.
 
+Yerleşik Wi-Fi derlemesinde IPA ve netlink yardımcıları da kernelin genel
+fonksiyonlarıyla isim çakıştırıyordu. Wi-Fi'nin kendi hazır olma kontrolü
+`wlan_ipa_is_ready`, CLD80211 başlık yardımcısı `cld80211hdr_put` olarak
+adlandırıldı; bildirimler ve ilgili çağrılar birlikte güncellendi. Platformun
+`ipa_is_ready` API'si ve kernelin NL80211 kodu değiştirilmedi.
+
 Windows'ta test öncesi ve sonrası kayıt almak için:
 
 ```powershell
