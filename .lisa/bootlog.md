@@ -5,6 +5,13 @@ yeniden başlama döngüsüne girdi. Pstore boş ve last_kmsg yoktu. ROM'un cach
 arşivleri eski qgki/Tachyon denemelerine ait; güncel `.partial` arşivi boştu.
 Bu yüzden henüz doğrulanmış bir açılış yaması yoktur.
 
+ROM vendor_boot ramdiskinde 46 modüllük bir başlangıç listesi var. Kurulum
+öncesi Tachyon ve kurulum sonrası repo kernelinin recovery dmesg kayıtlarında
+cmd_db, msm_drm ve bazı ses/hwid modülleri için aynı module_layout sürüm
+uyumsuzlukları görülüyor. İki kernel de recovery açabildiği ve Tachyon Android'i
+de açabildiği için bu ortak uyarılar tek başına yeni bootloop'u açıklamaz.
+MODULE_FORCE_LOAD açılarak uyumsuz modüller zorlanmamalıdır.
+
 ## Yalnız tanı sürümünde kayıt
 
 Workflow'daki `boot_log=true` seçeneği `CONFIG_LISA_BOOTLOG=y` ve
