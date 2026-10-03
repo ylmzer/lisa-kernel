@@ -3,7 +3,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 MODE="${1:-build}"
-case "$MODE" in config-only|vendor-only|build) ;; *) echo "Usage: $0 [config-only|vendor-only|build]" >&2; exit 2;; esac
+case "$MODE" in config-only|bootlog-only|vendor-only|build) ;; *) echo "Usage: $0 [config-only|bootlog-only|vendor-only|build]" >&2; exit 2;; esac
 OUT="$ROOT/out/lisa"
 DIST="$ROOT/dist/lisa"
 mkdir -p "$OUT" "$DIST"
@@ -51,6 +51,12 @@ ARGS=(O="$OUT" ARCH=arm64 LLVM=1 LLVM_IAS=1
 cp .lisa/configs/tachyon-reference.config "$OUT/.config"
 scripts/config --file "$OUT/.config" --set-str LOCALVERSION "-lisa-ylmzer" \
   -d LOCALVERSION_AUTO -d KSU -d MODULE_FORCE_LOAD
+if [ "${BOOT_LOG:-0}" = 1 ]; then
+  scripts/config --file "$OUT/.config" -e LISA_BOOTLOG \
+    --set-str LOCALVERSION "-lisa-bootdiag"
+else
+  scripts/config --file "$OUT/.config" -d LISA_BOOTLOG
+fi
 cp "$OUT/.config" "$DIST/requested.config"
 make "${ARGS[@]}" olddefconfig 2>&1 | tee "$DIST/config.log"
 cp "$OUT/.config" "$DIST/resolved.config"
@@ -59,6 +65,13 @@ python3 .lisa/config_audit.py "$DIST/requested.config" "$DIST/resolved.config" \
 python3 .lisa/techpack_audit.py > "$DIST/techpack-config.txt"
 if [ "$MODE" = config-only ]; then
   echo 'Config audit completed; this is not a compiled or device-tested kernel.'
+  exit 0
+fi
+if [ "$MODE" = bootlog-only ]; then
+  grep -qx 'CONFIG_LISA_BOOTLOG=y' "$OUT/.config"
+  make -j"${JOBS:-$(nproc)}" "${ARGS[@]}" drivers/misc/lisa_bootlog.o \
+    2>&1 | tee "$DIST/bootlog-build.log"
+  echo 'Diagnostic recorder compiled; runtime recording still requires device testing.'
   exit 0
 fi
 make -j"${JOBS:-$(nproc)}" "${ARGS[@]}" \

@@ -11,6 +11,10 @@ on:
         description: Produce an untested AnyKernel3 diagnostic ZIP (full build only)
         type: boolean
         default: false
+      boot_log:
+        description: Enable bounded boot logging to lisa's dedicated oops partition
+        type: boolean
+        default: false
 permissions:
   contents: read
 defaults:
@@ -46,14 +50,24 @@ jobs:
             .lisa/tests/lz4kd_roundtrip.c lib/lz4kd/lz4kd_encode.c lib/lz4kd/lz4kd_decode.c \
             -o out/tests/lz4kd-roundtrip
           out/tests/lz4kd-roundtrip | tee dist/lisa/codec-test.txt
+      - name: Verify boot-log recovery and corruption handling
+        run: python3 .lisa/tests/test_bootlog_decode.py
+      - name: Compile opt-in boot recorder before the full build
+        if: inputs.mode == 'build' && inputs.boot_log
+        env:
+          USE_CCACHE: '1'
+          BOOT_LOG: '1'
+        run: bash .lisa/build.sh bootlog-only
       - name: Compile and verify built-in vendor drivers
         if: inputs.mode == 'build'
         env:
           USE_CCACHE: '1'
+          BOOT_LOG: ${{ inputs.boot_log && '1' || '0' }}
         run: bash .lisa/build.sh vendor-only
       - name: Configure and build
         env:
           USE_CCACHE: '1'
+          BOOT_LOG: ${{ inputs.boot_log && '1' || '0' }}
         run: bash .lisa/build.sh '${{ inputs.mode }}'
       - name: Checkout pinned AnyKernel3 installer
         if: inputs.mode == 'build' && inputs.package
@@ -66,6 +80,9 @@ jobs:
         if: inputs.mode == 'build' && inputs.package
         run: |
           cp .lisa/anykernel.sh out/anykernel/anykernel.sh
+          if [ '${{ inputs.boot_log }}' = true ]; then
+            sed -i '/^write_boot;/i patch_cmdline lisa_bootlog "lisa_bootlog=1";' out/anykernel/anykernel.sh
+          fi
           cp dist/lisa/Image out/anykernel/Image
           python3 - <<'PY'
           from pathlib import Path

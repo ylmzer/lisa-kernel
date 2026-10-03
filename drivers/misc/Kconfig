@@ -552,4 +552,17 @@ source "drivers/misc/ocxl/Kconfig"
 source "drivers/misc/cardreader/Kconfig"
 source "drivers/misc/habanalabs/Kconfig"
 source "drivers/misc/al6021/Kconfig"
+config LISA_BOOTLOG
+	bool "Opt-in lisa boot log recorder (diagnostic builds only)"
+	depends on ARCH_YUPIK && BLOCK && PRINTK && OF
+	select CRC32
+	default n
+	help
+	  When lisa_bootlog=1 is explicitly present on the kernel command line,
+	  record kernel/early-init logs for 90 seconds to lisa's verified, dedicated
+	  16 MiB oops partition. This overwrites old diagnostic logs only. The exact
+	  board model, GPT partition label and size are checked before writing.
+	  Four boots are retained so recovery does not erase the preceding failure.
+	  This is diagnostic instrumentation, not an Android boot compatibility fix.
+
 endmenu
