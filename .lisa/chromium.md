@@ -16,6 +16,23 @@ Tachyon'da KernelSU manual/auto-setuid kancaları etkin. Bu repodaki ilk tanı
 kernelinde bu kancalar bulunmaz. Kaynak ağacı ve derleyici de değiştiği için
 sonuçtaki davranış farkı tek başına KernelSU'ya bağlanamaz.
 
+## 3 Ekim 2026 canlı incelemesi
+
+Çalışan Tachyon 5.4.302 üzerinde Chrome 154.0.8037.94 ana süreç tombstone'u
+`Timed out waiting for GPU channel.` hatasını doğruladı. Ayrı canlı kayıtlarda
+native `zygote-child` SIGABRT ve NativeOnlySandboxedProcessService bağlantı
+sorunları gözlendi. Kullanılabilir çocuk backtrace'i alınamadı; belirli bir
+syscall veya KernelSU kaynaklı hata henüz kanıtlanmadı.
+
+Geçici `--disable-features=JavalessRendererExperimentOn` denemesinde Chrome'un
+komut dosyasını okuduğu doğrulandı; native çocuk çökmesi tekrarlandı. Java
+süreç yoluna geçiş ve test sayfasının yüklenmesi doğrulanamadığı için deney
+sonuçsuzdur. Debug-app ayarı ve geçici dosya temizlenip kontrol edildi.
+Ham loglar, tombstone'lar ve APK private yerel klasörde tutulur.
+
+**İlk derlenen tanı kerneli cihazda açılmadı.** Kernel karşılaştırması yapılmış
+sayılmaz. Aşağıdaki kernel adımları açılış sorunu çözülmeden uygulanmamalıdır.
+
 ## Kontrollü karşılaştırma
 
 1. Aynı ROM ve aynı tarayıcı sürümüyle başlangıç kayıtlarını saklayın.
