@@ -48,10 +48,16 @@ açılmaz ve `MODVERSIONS` kapatılmaz.
 
 ## Linux üzerinde yerel derleme
 
+Kaynakları Linux dosya sisteminde bu repodan yeniden klonlayın. Windows Git
+çalışma kopyasında sembolik bağlantılar metin dosyası olarak temsil edilir;
+Linux klonu gerçek bağlantıları geri kurar.
+
 ```sh
 sudo apt-get install bc bison flex make gcc g++ libssl-dev libelf-dev \
   libncurses-dev python3 rsync zip clang-14 lld-14 llvm-14 \
   gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi
+git clone https://github.com/ylmzer/lisa-kernel.git
+cd lisa-kernel
 bash .lisa/build.sh config-only
 bash .lisa/build.sh build
 ```
@@ -68,6 +74,8 @@ kamera, uyku/uyanma ve şarjı kontrol et. Ardından aynı Chromium sürümüyle
 açılış, sayfa yükleme ve video oynatmayı dene; logcat crash ve kernel logunu
 önceki kayıtlarla karşılaştır. Tarayıcı sorunu devam ederse Android 17
 `zygote_next` / `libzygote_sys` ve vendor kullanıcı alanı ayrıca incelenmelidir.
+Başlangıç bulguları ve karşılaştırma adımları [Chromium test planında](chromium.md)
+ayrıntılandırılmıştır.
 
 Ham cihaz logları ve kişisel bilgiler bu repoya dahil edilmez.
 
