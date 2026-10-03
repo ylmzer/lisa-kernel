@@ -7,3 +7,4 @@
 #define unlikely(x) __builtin_expect(!!(x), 0)
 #define EXPORT_SYMBOL(x)
 #define MODULE_LICENSE(x)
+#define MODULE_DESCRIPTION(x)
