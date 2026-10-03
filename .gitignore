@@ -162,3 +162,4 @@ Android.bp
 /out/
 /dist/
 /.lisa/private/
+/.lisa/**/__pycache__/
