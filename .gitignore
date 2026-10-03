@@ -153,3 +153,12 @@ arch/arm/boot/dts/vendor
 #Ignoring Android.bp link file
 #
 Android.bp
+
+# Lisa project files and local build outputs
+!/.lisa/
+!/.lisa/**
+!/.github/
+!/.github/**
+/out/
+/dist/
+/.lisa/private/

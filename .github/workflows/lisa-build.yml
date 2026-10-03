@@ -1,0 +1,65 @@
+name: Build Lisa diagnostic kernel
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Configuration audit or full kernel build
+        type: choice
+        options: [config-only, build]
+        default: config-only
+      package:
+        description: Produce an untested AnyKernel3 diagnostic ZIP (full build only)
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
+    steps:
+      - name: Checkout this repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Install compiler and dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc bison flex make gcc g++ libssl-dev libelf-dev \
+            libncurses-dev python3 rsync zip clang-14 lld-14 llvm-14 \
+            gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi
+      - name: Configure and build
+        run: bash .lisa/build.sh '${{ inputs.mode }}'
+      - name: Checkout pinned AnyKernel3 installer
+        if: inputs.mode == 'build' && inputs.package
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: osm0sis/AnyKernel3
+          ref: 020dfeccf9d7e962a48400fc94d3e451df92eead
+          path: out/anykernel
+      - name: Package diagnostic image
+        if: inputs.mode == 'build' && inputs.package
+        run: |
+          cp .lisa/anykernel.sh out/anykernel/anykernel.sh
+          cp dist/lisa/Image out/anykernel/Image
+          python3 - <<'PY'
+          from pathlib import Path
+          import zipfile
+          root = Path('out/anykernel')
+          with zipfile.ZipFile('dist/lisa/lisa-diagnostic.zip', 'w', zipfile.ZIP_DEFLATED) as archive:
+              for path in sorted(root.rglob('*')):
+                  relative = path.relative_to(root)
+                  if not path.is_file() or any(part.startswith('.') for part in relative.parts):
+                      continue
+                  if path.name == 'README.md' or 'placeholder' in path.name:
+                      continue
+                  archive.write(path, relative.as_posix())
+          PY
+          cd dist/lisa
+          sha256sum lisa-diagnostic.zip >> SHA256SUMS
+      - name: Preserve logs and artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: lisa-${{ inputs.mode }}-${{ github.run_id }}
+          path: dist/lisa/
+          if-no-files-found: warn
+          retention-days: 14
