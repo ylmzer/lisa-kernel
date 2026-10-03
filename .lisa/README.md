@@ -46,6 +46,10 @@ Yeni DTB/DTBO dosyaları otomatik flash edilmez. Çalışan kernelde olduğu gib
 vendor sürücüleri çekirdeğe gömülü tutulmaya çalışılır; zorla modül yükleme
 açılmaz ve `MODVERSIONS` kapatılmaz.
 
+Tanı paketinde AnyKernel3'ün otomatik Magisk algılama/yama yolu kapalıdır
+(`NO_MAGISK_CHECK=1`); vbmeta bayraklarını değiştirme seçeneği de kapalıdır.
+Mevcut boot içeriği yeniden paketlenir ve yeni kernel imajı yerleştirilir.
+
 ## Linux üzerinde yerel derleme
 
 Kaynakları Linux dosya sisteminde bu repodan yeniden klonlayın. Windows Git

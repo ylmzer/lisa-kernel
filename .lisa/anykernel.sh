@@ -14,7 +14,8 @@ supported.vendorpatchlevels=
 BLOCK=boot;
 IS_SLOT_DEVICE=1;
 RAMDISK_COMPRESSION=auto;
-PATCH_VBMETA_FLAG=auto;
+PATCH_VBMETA_FLAG=0;
+NO_MAGISK_CHECK=1;
 . tools/ak3-core.sh;
 ui_print "Diagnostic build: Chromium fix and device compatibility are unverified.";
 ui_print "KernelSU/ReSukiSU is not included in this build.";
