@@ -95,6 +95,9 @@ fi
 make -j"${JOBS:-$(nproc)}" "${ARGS[@]}" Image dtbs 2>&1 | tee "$DIST/build.log"
 test -s "$OUT/arch/arm64/boot/Image"
 cp "$OUT/arch/arm64/boot/Image" "$OUT/vmlinux" "$OUT/System.map" "$DIST/"
+grep -aFq 'wlan/qca_cld/qca6750/WCNSS_qcom_cfg.ini' "$DIST/Image" || {
+  echo 'Missing QCA6750 firmware configuration namespace' >&2; exit 1;
+}
 for symbol in wlan_hdd_state_fops rmnet_link_ops rmnet_ctl_register_client; do
   grep -Eq "[[:space:]]${symbol}$" "$DIST/System.map" || {
     echo "Missing linked network provider: $symbol" >&2; exit 1;

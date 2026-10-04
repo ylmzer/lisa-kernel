@@ -18,6 +18,11 @@ ifeq ($(KERNEL_BUILD), y)
 	WLAN_COMMON_INC := $(WLAN_ROOT)/$(WLAN_COMMON_ROOT)
 	WLAN_FW_API := $(WLAN_ROOT)/../fw-api/
 	WLAN_PROFILE := default
+	# Lisa's vendor firmware namespace is chip-specific. Keep the HAL's
+	# /dev/wlan identity while selecting the existing QCA6750 INI/MAC files.
+	ifeq ($(CONFIG_CNSS_QCA6750), y)
+		DYNAMIC_SINGLE_CHIP ?= qca6750
+	endif
 endif
 
 WLAN_COMMON_ROOT ?= ../qca-wifi-host-cmn

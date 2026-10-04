@@ -63,3 +63,25 @@ The phone copy will be named `lisa-network-compat-4083eb08.zip`. USB ADB is
 currently unavailable, so no copy or installation has occurred. Android boot,
 display retention, Wi-Fi, cellular data and calls remain unverified for this
 new candidate.
+
+## Network candidate device observation
+
+The user installed `4083eb08`. Its `/proc/version` matches the candidate's
+build timestamp, Android boot completes and BPF reports loaded. The real
+`/dev/wlan` endpoint exists with wifi ownership, RMNET_CTL probes and
+`rmnet_data0` is UP. Android ConnectivityService reports LTE INTERNET
+validated. Physical mobile-data browsing and calls still require user results.
+
+Wi-Fi progresses past the previous missing endpoint, but its HAL ON write
+times out after the ICNSS2 host probe fails. Ueventd reports missing
+`wlan/qca_cld/WCNSS_qcom_cfg.ini`: its vendor symlink targets an absent
+`/vendor/etc/wifi/WCNSS_qcom_cfg.ini`. The chip-specific
+`wlan/qca_cld/qca6750/WCNSS_qcom_cfg.ini` resolves to an existing readable
+vendor configuration. No vendor filesystem changes or fake firmware files
+were made.
+
+The standalone QCA6750 build now defaults the existing DYNAMIC_SINGLE_CHIP
+flag to `qca6750`, selecting the real INI/MAC namespace while retaining
+the HAL device name. External module builds and other chip defaults are
+unchanged. Final Image verification now requires the actual QCA6750 INI
+path. A new complete build and Wi-Fi device test are required.
