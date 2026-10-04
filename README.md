@@ -1,25 +1,23 @@
 # lisa-kernel
 
-**Cihaz testi başarısız:** İlk tanı ZIP'i yüklendikten sonra kullanıcı boot
-logosunda tekrar tekrar yeniden başlama bildirdi. Bu ZIP mevcut ROM için
-çalışan kernel olarak kullanılmamalıdır. Açılış hatasının nedeni henüz
-kayıtlarla doğrulanmadı; önce kurulum öncesi Boot yedeğine dönüş ve hata
-kayıtlarının alınması gerekiyor.
+**Güncel cihaz durumu (4 Ekim 2026):** Android açılışı ve BPF yüklemesi
+tamamlanıyor. `ab4f5ee5` MIUI ekran paketiyle kullanıcı fiziksel ekranın
+başarıyla geldiğini doğruladı. Wi-Fi, mobil veri ve aramalar çalışmıyor;
+tam ROM uyumluluğu henüz sağlanmadı.
 
 Xiaomi 11 Lite 5G NE (`lisa` / SM7325) için bağımsız Linux 5.4.302 kaynak reposu.
 
-**Güncel öncelik: Android açılışı.** İkinci testte kernel TWRP'de çalıştı,
-Android açılışı yeniden başlama döngüsüne girdi. [Açılış tanı kaydedicisi](.lisa/bootlog.md)
-eklendi; [tanı derlemesi](https://github.com/ylmzer/lisa-kernel/actions/runs/37155115623)
-ve yerel ZIP/Image doğrulaması başarılı. Kaydedici bir açılış düzeltmesi değildir;
-cihaz testi henüz yapılmadı. Yeni paket `lisa-bootdiag.zip`, sürüm
-`5.4.302-lisa-bootdiag+`, kaynak `c18e4724dcde865c83e07c3f93e4c9ee39eef790`.
-ZIP SHA-256: `4bb650363f697a7872b9f7a2ae91eb89c30ec136483b898b8ffa0066872e855c`.
+**Güncel öncelik: ağ ve arama işlevleri.** Wi-Fi HAL kontrol düğümü ve
+Qualcomm RMNET sürücülerinin yerleşik entegrasyonu düzeltildi; yeni
+[derleme](https://github.com/ylmzer/lisa-kernel/actions/runs/37214770327)
+ve cihaz testi bekleniyor. [Ağ incelemesi](.lisa/network-bringup.md),
+[ekran sonucu](.lisa/display-bringup.md) ve
+[NetBpfLoad düzeltmesi](.lisa/netbpfload-compat.md) somut bulguları kaydeder.
 
 **Derleme durumu:** Tam kernel derlemesi ve AnyKernel3 ZIP üretimi başarılı.
 İndirilen çıktılar için SHA-256, ARM64 biçimi, temel ayarlar, son kerneldeki
 ekran bildirim sembolleri ve ZIP/Image eşleşmesi doğrulandı.
-Chromium sorunu henüz çözülmüş değildir; ilk cihaz testi açılış aşamasında başarısızdır.
+Chromium incelemesi temel cihaz işlevleri doğrulanana kadar bekletilir.
 
 - [İlk başarılı tam derleme](https://github.com/ylmzer/lisa-kernel/actions/runs/37129546878)
 - Derlenen kaynak: `3a12e2b7a58f89c0f332f82978ee3de21efc7557`.

@@ -17,10 +17,11 @@ NetBpfLoad'un gördüğü sürüm 5.10.248 ve `bpf.progs_loaded=1`.
 ekler. Kapsam/test ayrıntıları [NetBpfLoad uyumluluk kaydında](netbpfload-compat.md).
 Yeni paket kullanıcı tarafından yüklendi. İki açılışta `bpf.progs_loaded=1`
 ve `sys.boot_completed=1` doğrulandı; logo döngüsündeki ilk engel aşıldı.
-Ancak animasyondan sonra fiziksel ekran siyah kalıyor. Uyanık durumdaki ekran
-görüntüsünde kilit ekranı çizilmiş; görünür ekran kullanımı henüz sağlanmadı.
-[Ekran incelemesi](display-bringup.md) gerçek bulguları ve açık soruları kaydeder.
-Chrome incelemesi kullanılabilir Android açılışı sağlanana kadar bekletilir.
+Bu pakette animasyondan sonra fiziksel ekran siyah kaldı. Sonraki `ab4f5ee5`
+MIUI ekran paketiyle kullanıcı görünür ekranın başarıyla geldiğini doğruladı.
+[Ekran incelemesi](display-bringup.md) kayıtları içerir. Wi-Fi, mobil veri ve
+aramalar çalışmıyor; [ağ sürücüsü düzeltmeleri](network-bringup.md) derleniyor.
+Chrome incelemesi temel cihaz işlevleri doğrulanana kadar bekletilir.
 
 ## İlk cihaz testi: açılış başarısız
 

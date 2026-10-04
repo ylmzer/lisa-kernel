@@ -63,8 +63,10 @@ The user installed this package on 4 October 2026. Two observed Android boots
 report `bpf.progs_loaded=1` and `sys.boot_completed=1`; the compatibility hook
 and expected loader version are recorded. The physical display remains black
 after the animation, including on an awake sample with a rendered lockscreen.
-See [display bring-up](display-bringup.md). Visible usability and networking
-are not yet validated.
+See [display bring-up](display-bringup.md). A subsequent `ab4f5ee5` MIUI driver
+candidate brought up the visible display, confirmed by the user. Wi-Fi,
+cellular data and calls are reported failing; [network bring-up](network-bringup.md)
+is the current work. Full ROM compatibility is not established.
 
 The AOSP service definition documents failure-triggered reboot:
 https://android.googlesource.com/platform/packages/modules/Connectivity/+/48646b0d0a5e03461fb872da9c4d3961dbd78fac/netbpfload/netbpfload.mainline.rc
