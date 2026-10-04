@@ -93,8 +93,8 @@ Wi-Fi connects. Device logs show the chip-specific INI loads and wlan0
 connects. Subsequent audio/haptics candidates retain this configuration.
 The user also reports hotspot opens and explicitly requested no further
 hotspot work. After installing `dd06b185`, the user confirms two-way call
-audio, including microphone operation. LTE framework validation does not
-establish user-verified mobile-data browsing.
+audio, including microphone operation. The user also confirms that a web
+page loads over mobile data with Wi-Fi disabled on this candidate.
 
 The user has not seen 5G at the same location with the previous ROM/kernel;
 there is no established 5G regression baseline. Leave 5G unverified until a
