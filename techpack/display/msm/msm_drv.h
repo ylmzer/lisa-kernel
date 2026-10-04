@@ -75,6 +75,8 @@ struct msm_gem_vma;
 #define MAX_CONNECTORS 16
 
 #define MSM_RGB 0x0
+extern atomic_t resume_pending;
+extern wait_queue_head_t resume_wait_q;
 #define MSM_YUV 0x1
 
 #define MSM_CHROMA_444 0x0

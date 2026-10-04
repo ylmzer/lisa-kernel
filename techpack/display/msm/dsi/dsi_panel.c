@@ -4244,6 +4244,9 @@ int dsi_panel_get_mode(struct dsi_panel *panel,
 	int traffic_mode;
 	int panel_mode;
 	void *utils_data = NULL;
+	struct dsi_cmd_desc *cmds;
+	int i, j;
+	u8 *tx_buf;
 
 	if (!panel || !mode) {
 		DSI_ERR("invalid params\n");

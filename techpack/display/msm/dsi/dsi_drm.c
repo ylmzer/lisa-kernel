@@ -31,6 +31,19 @@ static struct dsi_display_mode_priv_info default_priv_info = {
 	.dsc_enabled = false,
 };
 
+#define WAIT_RESUME_TIMEOUT 200
+
+struct dsi_bridge *gbridge;
+static struct delayed_work prim_panel_work;
+static atomic_t prim_panel_is_on;
+static struct wakeup_source *prim_panel_wakelock;
+
+struct dsi_bridge *gsec_bridge;
+static struct delayed_work sec_panel_work;
+static atomic_t sec_panel_is_on;
+static struct wakeup_source *sec_panel_wakelock;
+
+
 static void convert_to_dsi_mode(const struct drm_display_mode *drm_mode,
 				struct dsi_display_mode *dsi_mode)
 {
@@ -1364,6 +1377,28 @@ struct dsi_bridge *dsi_drm_bridge_init(struct dsi_display *display,
 	}
 
 	encoder->bridge = &bridge->base;
+
+	bridge->is_dsi_drm_bridge = true;
+	mutex_init(&bridge->lock);
+
+	if (!strcmp(display->display_type, "primary")) {
+		gbridge = bridge;
+		atomic_set(&resume_pending, 0);
+		prim_panel_wakelock = wakeup_source_create("prim_panel_wakelock");
+		wakeup_source_add(prim_panel_wakelock);
+		atomic_set(&prim_panel_is_on, false);
+		init_waitqueue_head(&resume_wait_q);
+		INIT_DELAYED_WORK(&prim_panel_work, prim_panel_off_delayed_work);
+	} else if (!strcmp(display->display_type, "secondary")) {
+		gsec_bridge = bridge;
+		atomic_set(&resume_pending, 0);
+		sec_panel_wakelock = wakeup_source_create("sec_panel_wakelock");
+		wakeup_source_add(sec_panel_wakelock);
+		atomic_set(&sec_panel_is_on, false);
+		init_waitqueue_head(&resume_wait_q);
+		INIT_DELAYED_WORK(&sec_panel_work, sec_panel_off_delayed_work);
+	}
+
 	return bridge;
 error_free_bridge:
 	kfree(bridge);
@@ -1375,6 +1410,18 @@ void dsi_drm_bridge_cleanup(struct dsi_bridge *bridge)
 {
 	if (bridge && bridge->base.encoder)
 		bridge->base.encoder->bridge = NULL;
+
+	if (bridge == gbridge) {
+		atomic_set(&prim_panel_is_on, false);
+		cancel_delayed_work_sync(&prim_panel_work);
+		wakeup_source_remove(prim_panel_wakelock);
+		wakeup_source_destroy(prim_panel_wakelock);
+	} else if (bridge == gsec_bridge) {
+		atomic_set(&sec_panel_is_on, false);
+		cancel_delayed_work_sync(&sec_panel_work);
+		wakeup_source_remove(sec_panel_wakelock);
+		wakeup_source_destroy(sec_panel_wakelock);
+	}
 
 	kfree(bridge);
 }

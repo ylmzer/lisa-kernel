@@ -55,7 +55,7 @@ jobs:
       - name: Verify netbpfload uname compatibility boundaries
         run: python3 .lisa/tests/test_netbpfload_compat.py
       - name: Verify MIUI display ABI and asynchronous payload ownership
-        run: python3 .lisa/tests/test_mi_display.py
+        run: python3 .lisa/tests/test_mi_display.py | tee dist/lisa/mi-display-test.txt
       - name: Compile opt-in boot recorder before the full build
         if: inputs.mode == 'build' && inputs.boot_log
         env:
