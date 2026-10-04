@@ -28,3 +28,19 @@ The existing device tree, ROM/vendor files and firmware remain untouched.
 Full CI, sound-card registration, media playback, call audio and microphone
 tests are still required before claiming audio works. Private device records
 are not committed.
+
+## First audio candidate observation
+
+The user installed `8d9f78e6`. The boot banner matches its verified Image.
+Both TFA9873 amplifiers probe successfully and all six combined MI2S
+components register. The sound card now gets past the earlier missing
+PRI_MI2S_RX component but remains deferred because the newer machine header
+still refers to CPU DAI `msm-dai-q6-mi2s.6`, absent from the live DT's 0..5
+interface namespace. No ALSA sound card is present yet.
+
+The machine header now selects combined CPU names for Lisa's RX/TX pairs
+while retaining the existing separate-direction names for other targets.
+A preprocessor test reads the actual header and checks both contracts:
+six shared full-duplex interfaces for Lisa and twelve unique direction DAIs
+for the native path. A new combined audio/haptics build and device test are
+required; amplifier detection alone does not establish working audio.

@@ -58,6 +58,8 @@ jobs:
         run: python3 .lisa/tests/test_mi_display.py | tee dist/lisa/mi-display-test.txt
       - name: Verify built-in WLAN HAL startup and load failure handling
         run: python3 .lisa/tests/test_wlan_startup.py | tee dist/lisa/wlan-startup-test.txt
+      - name: Verify Lisa and native MI2S interface namespaces
+        run: python3 .lisa/tests/test_mi2s_namespace.py | tee dist/lisa/mi2s-namespace-test.txt
       - name: Compile opt-in boot recorder before the full build
         if: inputs.mode == 'build' && inputs.boot_log
         env:
