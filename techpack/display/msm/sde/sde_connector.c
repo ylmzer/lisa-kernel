@@ -21,6 +21,10 @@
 #include "sde_vm.h"
 #include <drm/drm_probe_helper.h>
 
+#include "mi_disp_feature.h"
+#include "mi_dsi_display.h"
+#include "mi_cooling_device.h"
+
 #define BL_NODE_NAME_SIZE 32
 #define HDR10_PLUS_VSIF_TYPE_CODE      0x81
 
@@ -97,6 +101,7 @@ static int sde_backlight_device_update_status(struct backlight_device *bd)
 	struct sde_connector *c_conn = bl_get_data(bd);
 	int bl_lvl;
 	struct drm_event event;
+	struct disp_event d_event;
 	int rc = 0;
 	struct sde_kms *sde_kms;
 	struct sde_vm_ops *vm_ops;
@@ -152,8 +157,16 @@ static int sde_backlight_device_update_status(struct backlight_device *bd)
 			msm_mode_object_event_notify(&c_conn->base.base,
 				c_conn->base.dev, &event, (u8 *)&brightness);
 		}
+
+
+		d_event.disp_id = mi_get_disp_id(display);
+		d_event.type = MI_DISP_EVENT_BACKLIGHT;
+		d_event.length = sizeof(brightness);
+		mi_disp_feature_event_notify(&d_event, (u8 *)&brightness);
+
 		rc = c_conn->ops.set_backlight(&c_conn->base,
 				c_conn->display, bl_lvl);
+		c_conn->unset_bl_level = 0;
 		display->panel->bl_config.unset_bl_level = 0;
 	}
 
@@ -165,7 +178,13 @@ done:
 
 static int sde_backlight_device_get_brightness(struct backlight_device *bd)
 {
-	return 0;
+	struct dsi_display *display;
+	struct sde_connector *c_conn;
+
+	c_conn = bl_get_data(bd);
+	display = (struct dsi_display *) c_conn->display;
+
+	return display->panel->mi_cfg.last_bl_level;
 }
 
 static const struct backlight_ops sde_backlight_device_ops = {
@@ -242,6 +261,16 @@ static int sde_backlight_setup(struct sde_connector *c_conn,
 	if (IS_ERR_OR_NULL(c_conn->cdev)) {
 		SDE_ERROR("Failed to register backlight cdev: %ld\n",
 				    PTR_ERR(c_conn->cdev));
+		backlight_device_unregister(c_conn->bl_device);
+		c_conn->bl_device = NULL;
+		return -ENODEV;
+	}
+
+	rc = mi_sde_backlight_setup(c_conn, dev->dev, c_conn->bl_device);
+	if (rc) {
+		SDE_ERROR("Failed to register backlight mi_cdev: %ld\n",
+				    PTR_ERR(c_conn->mi_cdev));
+		backlight_cdev_unregister(c_conn->cdev);
 		backlight_device_unregister(c_conn->bl_device);
 		c_conn->bl_device = NULL;
 		return -ENODEV;
@@ -838,81 +867,6 @@ struct sde_connector_dyn_hdr_metadata *sde_connector_get_dyn_hdr_meta(
 	return &c_state->dyn_hdr_meta;
 }
 
-void sde_connector_fod_pre_kickoff(struct drm_connector *connector)
-{
-	struct sde_connector *c_conn;
-	struct dsi_display *display;
-	struct dsi_panel *panel;
-	int rc;
-
-	if (!connector)
-		return;
-
-	c_conn = to_sde_connector(connector);
-	if (c_conn->connector_type != DRM_MODE_CONNECTOR_DSI)
-		return;
-
-	display = (struct dsi_display *) c_conn->display;
-	if (!display)
-		return;
-
-	if (display->display_selection_type != DSI_PRIMARY)
-		return;
-
-	panel = display->panel;
-	if (!panel)
-		return;
-
-	if (dsi_panel_is_fod_hbm_applied(panel))
-		return;
-
-	rc = dsi_panel_apply_requested_fod_hbm(panel);
-	if (rc)
-		return;
-
-	if (!dsi_panel_get_fod_hbm(panel))
-		dsi_panel_set_fod_ui(panel, 0);
-}
-
-void sde_connector_fod_post_kickoff(struct drm_connector *connector)
-{
-	static bool old_fod_hbm_enabled = false;
-	struct sde_connector *c_conn;
-	struct dsi_display *display;
-	struct dsi_panel *panel;
-	bool fod_hbm_enabled;
-
-	if (!connector)
-		return;
-
-	c_conn = to_sde_connector(connector);
-	if (c_conn->connector_type != DRM_MODE_CONNECTOR_DSI)
-		return;
-
-	display = (struct dsi_display *) c_conn->display;
-	if (!display)
-		return;
-
-	if (display->display_selection_type != DSI_PRIMARY)
-		return;
-
-	panel = display->panel;
-	if (!panel)
-		return;
-
-	if (!dsi_panel_is_fod_hbm_applied(panel))
-		return;
-
-	fod_hbm_enabled = dsi_panel_get_fod_hbm(panel);
-	if (fod_hbm_enabled && fod_hbm_enabled != old_fod_hbm_enabled) {
-		sde_encoder_wait_for_event(c_conn->encoder, MSM_ENC_TX_COMPLETE);
-		sde_encoder_wait_for_event(c_conn->encoder, MSM_ENC_VBLANK);
-		dsi_panel_set_fod_ui(panel, 1);
-	}
-
-	old_fod_hbm_enabled = fod_hbm_enabled;
-}
-
 int sde_connector_pre_kickoff(struct drm_connector *connector)
 {
 	struct sde_connector *c_conn;
@@ -958,7 +912,9 @@ int sde_connector_pre_kickoff(struct drm_connector *connector)
 
 	SDE_EVT32_VERBOSE(connector->base.id);
 
-	sde_connector_fod_pre_kickoff(connector);
+	mi_sde_connector_gir_fence(connector);
+
+	mi_sde_connector_fod_hbm_fence(connector);
 
 	rc = c_conn->ops.pre_kickoff(connector, c_conn->display, &params);
 
@@ -1042,6 +998,7 @@ void sde_connector_helper_bridge_disable(struct drm_connector *connector)
 		backlight_update_status(c_conn->bl_device);
 	}
 
+	c_conn->allow_bl_update = false;
 	if (display && display->panel)
 		display->panel->bl_config.allow_bl_update = false;
 }
@@ -1059,29 +1016,46 @@ void sde_connector_helper_bridge_enable(struct drm_connector *connector)
 	}
 
 	c_conn = to_sde_connector(connector);
+	display = (struct dsi_display *) c_conn->display;
 
-	if (c_conn->connector_type == DRM_MODE_CONNECTOR_DSI) {
-		display = (struct dsi_display *) c_conn->display;
-
-		/*
-		 * Special handling for some panels which need atleast
-		 * one frame to be transferred to GRAM before enabling
-		 * backlight.
-		 * So delay backlight update to these panels until the
-		 * first frame commit is received from the HW.
-		 */
-		if (display->panel->bl_config.bl_update ==
-					BL_UPDATE_DELAY_UNTIL_FIRST_FRAME)
+	/*
+	 * Special handling for some panels which need atleast
+	 * one frame to be transferred to GRAM before enabling backlight.
+	 * So delay backlight update to these panels until the
+	 * first frame commit is received from the HW.
+	 */
+	if (display->panel->bl_config.bl_update ==
+				BL_UPDATE_DELAY_UNTIL_FIRST_FRAME) {
+		if (!c_conn->allow_bl_update) {
 			sde_encoder_wait_for_event(c_conn->encoder,
 					MSM_ENC_TX_COMPLETE);
+			SDE_INFO("[%s]show first frame done, bl:%d\n",
+				display->panel->name, c_conn->unset_bl_level);
+		}
 	}
-
+	c_conn->allow_bl_update = true;
 	display->panel->bl_config.allow_bl_update = true;
+
+	/* wake up pending work to set doze brightness*/
+	mi_dsi_display_wakeup_pending_doze_work(display);
+
+	if (display->panel->mi_cfg.pending_lhbm_state) {
+		mi_disp_set_fod_queue_work(1, false);
+	}
 
 	if (!sde_in_trusted_vm(sde_kms) && c_conn->bl_device) {
 		c_conn->bl_device->props.power = FB_BLANK_UNBLANK;
 		c_conn->bl_device->props.state &= ~BL_CORE_FBBLANK;
-		backlight_update_status(c_conn->bl_device);
+
+		/*
+		 *In DOZE mode, bl_device brightness should be 0.
+		 *We need switch fps to 120hz and enter normal mode
+		 *when gxzw_anim shows and set brightness to non-zero.
+		 *So Skip update bl_device brightness in AOD when fps switch.
+		 */
+		if (!(display->panel->cur_mode->dsi_mode_flags & DSI_MODE_FLAG_DMS)
+			&& !(display->panel->cur_mode->dsi_mode_flags & DSI_MODE_FLAG_DMS_FPS))
+			backlight_update_status(c_conn->bl_device);
 	}
 	c_conn->panel_dead = false;
 }
@@ -1141,6 +1115,8 @@ void sde_connector_destroy(struct drm_connector *connector)
 
 	if (c_conn->cdev)
 		backlight_cdev_unregister(c_conn->cdev);
+	if (c_conn->mi_cdev)
+		mi_backlight_cdev_unregister(&c_conn->mi_cdev->sde_cdev);
 	if (c_conn->bl_device)
 		backlight_device_unregister(c_conn->bl_device);
 	drm_connector_unregister(connector);
@@ -2504,7 +2480,7 @@ static int sde_connector_atomic_check(struct drm_connector *connector,
 	return 0;
 }
 
-static void _sde_connector_report_panel_dead(struct sde_connector *conn,
+void _sde_connector_report_panel_dead(struct sde_connector *conn,
 	bool skip_pre_kickoff)
 {
 	struct drm_event event;
@@ -3189,14 +3165,13 @@ struct drm_connector *sde_connector_init(struct drm_device *dev,
 	_sde_connector_lm_preference(c_conn, sde_kms,
 			display_info.display_type);
 
-	sde_hw_ctl_set_preference(sde_kms->catalog,
-			  display_info.display_type);
-
 	SDE_DEBUG("connector %d attach encoder %d\n",
 			c_conn->base.base.id, encoder->base.id);
 
 	INIT_DELAYED_WORK(&c_conn->status_work,
 			sde_connector_check_status_work);
+
+	mi_sde_connector_register_esd_irq(c_conn);
 
 	return &c_conn->base;
 

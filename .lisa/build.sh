@@ -79,7 +79,9 @@ make -j"${JOBS:-$(nproc)}" "${ARGS[@]}" \
   techpack/display/ techpack/audio/ techpack/camera/ 2>&1 | tee "$DIST/vendor-build.log"
 "$LLVM_NM" --defined-only "$OUT/techpack/display/msm/built-in.a" \
   > "$DIST/display-symbols.txt"
-for symbol in mi_disp_register_client mi_disp_unregister_client; do
+for symbol in mi_disp_register_client mi_disp_unregister_client \
+  mi_disp_feature_attach_display mi_disp_ioctl mi_dsi_panel_set_disp_param \
+  mi_dsi_panel_update_last_bl_level mi_disp_feature_event_notify; do
   grep -Eq "[[:space:]]${symbol}$" "$DIST/display-symbols.txt" || {
     echo "Missing built-in display provider: $symbol" >&2; exit 1;
   }
