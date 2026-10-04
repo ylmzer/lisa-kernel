@@ -21,6 +21,12 @@ the ordinary `uname -r` output. The other names in Tachyon's same branch are
 bpfloader, netd and uprobestats; they are not included in this targeted change.
 Binary dumps and disassembly stay in local private storage.
 
+After the user returned to Tachyon during the build, the live successful boot
+provided an independent check: ordinary uname reports 5.4.302-tachyon, while
+NetBpfLoad logs `kver:50a00f8` (5.10.248), uid 0, API 37/3700 and the same APEX
+version 370399999. `bpf.progs_loaded=1` and `sys.boot_completed=1`. The installed
+loader's disassembly shows the failing 25Q4 gate returning exit code 7.
+
 ## Targeted implementation
 
 `CONFIG_LISA_NETBPFLOAD_COMPAT` defaults off in Kconfig and is enabled by the
