@@ -1240,6 +1240,23 @@ static int override_release(char __user *release, size_t len)
 	return ret;
 }
 
+#ifdef CONFIG_LISA_NETBPFLOAD_COMPAT
+/* Match the working lisa kernel's Android 17 loader compatibility. */
+static void lisa_netbpfload_compat(struct new_utsname *name)
+{
+	if (uid_eq(current_uid(), GLOBAL_ROOT_UID)) {
+		char comm[TASK_COMM_LEN];
+
+		get_task_comm(comm, current);
+		if (!strcmp(comm, "netbpfload")) {
+			strscpy(name->release, "5.10.248", sizeof(name->release));
+			pr_info_once("lisa: netbpfload uname compatibility 5.10.248 (actual %s)\n",
+				     UTS_RELEASE);
+		}
+	}
+}
+#endif
+
 SYSCALL_DEFINE1(newuname, struct new_utsname __user *, name)
 {
 	struct new_utsname tmp;
@@ -1247,6 +1264,9 @@ SYSCALL_DEFINE1(newuname, struct new_utsname __user *, name)
 	down_read(&uts_sem);
 	memcpy(&tmp, utsname(), sizeof(tmp));
 	up_read(&uts_sem);
+#ifdef CONFIG_LISA_NETBPFLOAD_COMPAT
+	lisa_netbpfload_compat(&tmp);
+#endif
 	if (copy_to_user(name, &tmp, sizeof(tmp)))
 		return -EFAULT;
 

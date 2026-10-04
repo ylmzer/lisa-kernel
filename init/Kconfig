@@ -2385,4 +2385,14 @@ config ARCH_HAS_SYNC_CORE_BEFORE_USERMODE
 config ARCH_HAS_SYSCALL_WRAPPER
 	def_bool n
 
+config LISA_NETBPFLOAD_COMPAT
+	bool "Lisa HyperOS netbpfload uname compatibility"
+	depends on ARM64
+	help
+	  Report release 5.10.248 only to root-owned netbpfload via newuname.
+	  The installed Android 17 tethering loader rejects 5.4 before loading
+	  programs. This matches the working Tachyon kernel's loader workaround.
+	  It does not provide 5.10 APIs; BPF loading and networking still need
+	  device validation. Other callers retain the actual kernel release.
+
 source "init/Kconfig.gki"

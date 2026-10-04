@@ -51,7 +51,7 @@ ARGS=(O="$OUT" ARCH=arm64 LLVM=1 LLVM_IAS=1
 } > "$DIST/build-info.txt"
 cp .lisa/configs/tachyon-reference.config "$OUT/.config"
 scripts/config --file "$OUT/.config" --set-str LOCALVERSION "-lisa-ylmzer" \
-  -d LOCALVERSION_AUTO -d KSU -d MODULE_FORCE_LOAD
+  -d LOCALVERSION_AUTO -d KSU -d MODULE_FORCE_LOAD -e LISA_NETBPFLOAD_COMPAT
 if [ "${BOOT_LOG:-0}" = 1 ]; then
   scripts/config --file "$OUT/.config" -e LISA_BOOTLOG \
     --set-str LOCALVERSION "-lisa-bootdiag"
@@ -70,7 +70,7 @@ if [ "$MODE" = config-only ]; then
 fi
 if [ "$MODE" = bootlog-only ]; then
   grep -qx 'CONFIG_LISA_BOOTLOG=y' "$OUT/.config"
-  make -j"${JOBS:-$(nproc)}" "${ARGS[@]}" drivers/misc/lisa_bootlog.o \
+  make -j"${JOBS:-$(nproc)}" "${ARGS[@]}" drivers/misc/lisa_bootlog.o kernel/sys.o \
     2>&1 | tee "$DIST/bootlog-build.log"
   echo 'Diagnostic recorder compiled; runtime recording still requires device testing.'
   exit 0

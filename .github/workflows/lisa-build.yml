@@ -52,6 +52,8 @@ jobs:
           out/tests/lz4kd-roundtrip | tee dist/lisa/codec-test.txt
       - name: Verify boot-log recovery and corruption handling
         run: python3 .lisa/tests/test_bootlog_decode.py
+      - name: Verify netbpfload uname compatibility boundaries
+        run: python3 .lisa/tests/test_netbpfload_compat.py
       - name: Compile opt-in boot recorder before the full build
         if: inputs.mode == 'build' && inputs.boot_log
         env:
