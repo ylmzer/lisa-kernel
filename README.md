@@ -9,8 +9,9 @@ Xiaomi 11 Lite 5G NE (`lisa` / SM7325) için bağımsız Linux 5.4.302 kaynak re
 
 **Güncel öncelik: ağ ve arama işlevleri.** Wi-Fi HAL kontrol düğümü ve
 Qualcomm RMNET sürücülerinin yerleşik entegrasyonu düzeltildi; yeni
-[derleme](https://github.com/ylmzer/lisa-kernel/actions/runs/37214770327)
-ve cihaz testi bekleniyor. [Ağ incelemesi](.lisa/network-bringup.md),
+[derleme](https://github.com/ylmzer/lisa-kernel/actions/runs/37214770327),
+testler ve paket doğrulaması geçti. Yeni paketin cihaz testi bekleniyor.
+[Ağ incelemesi](.lisa/network-bringup.md),
 [ekran sonucu](.lisa/display-bringup.md) ve
 [NetBpfLoad düzeltmesi](.lisa/netbpfload-compat.md) somut bulguları kaydeder.
 

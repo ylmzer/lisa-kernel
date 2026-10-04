@@ -36,3 +36,30 @@ Vendor module CRC rejections are not bypassed. The installer still replaces
 only the kernel Image. Raw logs, network details and boot images remain in
 ignored private capture storage. Complete CI and device validation are required
 before calling network bring-up successful.
+
+The saved working Tachyon Image contains the HAL endpoint factory diagnostic
+and RMNET control-driver description. The tested display candidate lacks the
+factory diagnostic and linked RMNET core/control providers. The parameter
+prefix `hdd.fwpath` matches the working reference; no speculative renaming is
+needed. These comparisons support the integration changes but do not replace
+device testing.
+
+## Verified network candidate
+
+Full CI [37214770327](https://github.com/ylmzer/lisa-kernel/actions/runs/37214770327),
+source `4083eb08e6048c0458dc355e6a408a364187afc1`, completed successfully.
+Host tests, full vendor/core compilation, configuration audit and final network
+symbol checks pass. Local verification checks GitHub's artifact digest, every
+manifest checksum, ARM64 Image/ELF, installer/Image equality, the linked
+NetBpfLoad boundary, MIUI symbols, WLAN HAL factory diagnostic and RMNET
+core/control providers. There are no replacement DTBs, DTBOs or modules.
+
+- Artifact SHA-256: `1445bccdd66fd74f7c88fb6935dd31b57d0cef31d961cd35bf6f9bff91d903e4`.
+- ZIP SHA-256: `8e2a7adcf512194d4fea7c97e98cf15d5de17dc28fab0eb63fc51849105eb26f`.
+- Image SHA-256: `a6a1b2e9cd8689150fb6fc9f2a7516bed364f2796f064391676bf49f092d9026`.
+
+Local package: `dist/bootdiag/20261004-network-4083eb08/lisa-network-compat.zip`.
+The phone copy will be named `lisa-network-compat-4083eb08.zip`. USB ADB is
+currently unavailable, so no copy or installation has occurred. Android boot,
+display retention, Wi-Fi, cellular data and calls remain unverified for this
+new candidate.
