@@ -91,7 +91,7 @@ for symbol in mi_disp_register_client mi_disp_unregister_client \
 done
 "$LLVM_NM" --defined-only "$OUT/techpack/audio/asoc/codecs/tfa98xx/built-in.a" \
   > "$DIST/audio-amplifier-symbols.txt"
-grep -Eq '[[:space:]]tfa98xx_i2c_probe$' "$DIST/audio-amplifier-symbols.txt" || {
+grep -Eq '[[:space:]]tfa98xx_i2c_probe(\.[[:xdigit:]]{32})?$' "$DIST/audio-amplifier-symbols.txt" || {
   echo 'Missing built-in Lisa TFA amplifier provider' >&2; exit 1;
 }
 if [ "$MODE" = vendor-only ]; then
