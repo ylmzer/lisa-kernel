@@ -1359,6 +1359,7 @@ struct dsi_bridge *dsi_drm_bridge_init(struct dsi_display *display,
 {
 	int rc = 0;
 	struct dsi_bridge *bridge;
+	struct wakeup_source *wakelock = NULL;
 
 	bridge = kzalloc(sizeof(*bridge), GFP_KERNEL);
 	if (!bridge) {
@@ -1369,6 +1370,16 @@ struct dsi_bridge *dsi_drm_bridge_init(struct dsi_display *display,
 	bridge->display = display;
 	bridge->base.funcs = &dsi_bridge_ops;
 	bridge->base.encoder = encoder;
+	if (!strcmp(display->display_type, "primary") ||
+	    !strcmp(display->display_type, "secondary")) {
+		wakelock = wakeup_source_register(NULL,
+			!strcmp(display->display_type, "primary") ?
+			"prim_panel_wakelock" : "sec_panel_wakelock");
+		if (!wakelock) {
+			rc = -ENOMEM;
+			goto error_free_bridge;
+		}
+	}
 
 	rc = drm_bridge_attach(encoder, &bridge->base, NULL);
 	if (rc) {
@@ -1383,24 +1394,20 @@ struct dsi_bridge *dsi_drm_bridge_init(struct dsi_display *display,
 
 	if (!strcmp(display->display_type, "primary")) {
 		gbridge = bridge;
-		atomic_set(&resume_pending, 0);
-		prim_panel_wakelock = wakeup_source_create("prim_panel_wakelock");
-		wakeup_source_add(prim_panel_wakelock);
+		prim_panel_wakelock = wakelock;
 		atomic_set(&prim_panel_is_on, false);
-		init_waitqueue_head(&resume_wait_q);
 		INIT_DELAYED_WORK(&prim_panel_work, prim_panel_off_delayed_work);
 	} else if (!strcmp(display->display_type, "secondary")) {
 		gsec_bridge = bridge;
-		atomic_set(&resume_pending, 0);
-		sec_panel_wakelock = wakeup_source_create("sec_panel_wakelock");
-		wakeup_source_add(sec_panel_wakelock);
+		sec_panel_wakelock = wakelock;
 		atomic_set(&sec_panel_is_on, false);
-		init_waitqueue_head(&resume_wait_q);
 		INIT_DELAYED_WORK(&sec_panel_work, sec_panel_off_delayed_work);
 	}
 
 	return bridge;
 error_free_bridge:
+	if (wakelock)
+		wakeup_source_unregister(wakelock);
 	kfree(bridge);
 error:
 	return ERR_PTR(rc);
@@ -1414,13 +1421,15 @@ void dsi_drm_bridge_cleanup(struct dsi_bridge *bridge)
 	if (bridge == gbridge) {
 		atomic_set(&prim_panel_is_on, false);
 		cancel_delayed_work_sync(&prim_panel_work);
-		wakeup_source_remove(prim_panel_wakelock);
-		wakeup_source_destroy(prim_panel_wakelock);
+		wakeup_source_unregister(prim_panel_wakelock);
+		gbridge = NULL;
+		prim_panel_wakelock = NULL;
 	} else if (bridge == gsec_bridge) {
 		atomic_set(&sec_panel_is_on, false);
 		cancel_delayed_work_sync(&sec_panel_work);
-		wakeup_source_remove(sec_panel_wakelock);
-		wakeup_source_destroy(sec_panel_wakelock);
+		wakeup_source_unregister(sec_panel_wakelock);
+		gsec_bridge = NULL;
+		sec_panel_wakelock = NULL;
 	}
 
 	kfree(bridge);
