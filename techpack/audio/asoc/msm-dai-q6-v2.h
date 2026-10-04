@@ -18,6 +18,25 @@
 #define MSM_MI2S_CAP_RX 0
 #define MSM_MI2S_CAP_TX 1
 
+#ifdef CONFIG_TARGET_PRODUCT_LISA
+#define MSM_PRIM_MI2S 0
+#define MSM_SEC_MI2S  1
+#define MSM_TERT_MI2S 2
+#define MSM_QUAT_MI2S  3
+#define MSM_QUIN_MI2S  4
+#define MSM_SENARY_MI2S  5
+#define MSM_SEC_MI2S_SD1  6
+#define MSM_INT0_MI2S  7
+#define MSM_INT1_MI2S  8
+#define MSM_INT2_MI2S  9
+#define MSM_INT3_MI2S  10
+#define MSM_INT4_MI2S  11
+#define MSM_INT5_MI2S  12
+#define MSM_INT6_MI2S  13
+#define MSM_MI2S_MIN MSM_PRIM_MI2S
+#define MSM_MI2S_MAX MSM_INT6_MI2S
+
+#else
 #define MSM_PRIM_MI2S_RX 0
 #define MSM_PRIM_MI2S_TX 1
 #define MSM_SEC_MI2S_RX  2
@@ -48,6 +67,8 @@
 #define MSM_MI2S_MIN MSM_PRIM_MI2S_RX
 #define MSM_MI2S_MAX MSM_INT6_MI2S_TX
 
+#endif
+
 #define MSM_DISPLAY_PORT	0
 #define MSM_DISPLAY_PORT1	1
 
@@ -73,7 +94,12 @@ struct msm_dai_auxpcm_pdata {
 };
 
 struct msm_mi2s_pdata {
+#ifdef CONFIG_TARGET_PRODUCT_LISA
+	u16 rx_sd_lines;
+	u16 tx_sd_lines;
+#else
 	u16 sd_lines;
+#endif
 	u16 intf_id;
 };
 

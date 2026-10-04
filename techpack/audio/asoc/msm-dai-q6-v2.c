@@ -349,7 +349,12 @@ struct msm_dai_q6_mi2s_dai_config {
 
 struct msm_dai_q6_mi2s_dai_data {
 	u32 is_island_dai;
+#ifdef CONFIG_TARGET_PRODUCT_LISA
+	struct msm_dai_q6_mi2s_dai_config tx_dai;
+	struct msm_dai_q6_mi2s_dai_config rx_dai;
+#else
 	struct msm_dai_q6_mi2s_dai_config mi2s_dai;
+#endif
 };
 
 struct msm_dai_q6_meta_mi2s_dai_data {
@@ -5793,6 +5798,9 @@ static struct snd_soc_dai_driver msm_dai_q6_slimbus_tx_dai[] = {
 	},
 };
 
+#ifdef CONFIG_TARGET_PRODUCT_LISA
+#include "msm-dai-q6-mi2s-lisa.h"
+#else
 static int msm_dai_q6_mi2s_format_put(struct snd_kcontrol *kcontrol,
 				      struct snd_ctl_elem_value *ucontrol)
 {
@@ -7266,6 +7274,8 @@ static int msm_dai_q6_mi2s_dev_remove(struct platform_device *pdev)
 	snd_soc_unregister_component(&pdev->dev);
 	return 0;
 }
+
+#endif /* CONFIG_TARGET_PRODUCT_LISA */
 
 static int msm_dai_q6_dai_meta_mi2s_probe(struct snd_soc_dai *dai)
 {

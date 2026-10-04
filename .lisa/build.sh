@@ -30,7 +30,7 @@ export KBUILD_BUILD_USER=ylmzer
 export KBUILD_BUILD_HOST=lisa-builder
 export KBUILD_BUILD_VERSION=1
 export KBUILD_BUILD_TIMESTAMP="$(git show -s --format=%cD HEAD)"
-ARGS=(O="$OUT" ARCH=arm64 LLVM=1 LLVM_IAS=1
+ARGS=(O="$OUT" ARCH=arm64 TARGET_PRODUCT=lisa LLVM=1 LLVM_IAS=1
   CC="$KERNEL_CC" LD="ld.lld${LLVM_SUFFIX}"
   AR="llvm-ar${LLVM_SUFFIX}" NM="llvm-nm${LLVM_SUFFIX}"
   LLVM_NM="$LLVM_NM"
@@ -40,6 +40,7 @@ ARGS=(O="$OUT" ARCH=arm64 LLVM=1 LLVM_IAS=1
   CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_COMPAT=arm-linux-gnueabi-)
 {
   echo "source_commit=$(git rev-parse HEAD)"
+  echo "target_product=lisa"
   echo "upstream_commit=7ede20c8692e0e0fc044754429e33cfd1d75c40d"
   echo "mode=$MODE"
   echo "root_support=none"
@@ -88,6 +89,11 @@ for symbol in mi_disp_register_client mi_disp_unregister_client \
     echo "Missing built-in display provider: $symbol" >&2; exit 1;
   }
 done
+"$LLVM_NM" --defined-only "$OUT/techpack/audio/asoc/codecs/tfa98xx/built-in.a" \
+  > "$DIST/audio-amplifier-symbols.txt"
+grep -Eq '[[:space:]]tfa98xx_i2c_probe$' "$DIST/audio-amplifier-symbols.txt" || {
+  echo 'Missing built-in Lisa TFA amplifier provider' >&2; exit 1;
+}
 if [ "$MODE" = vendor-only ]; then
   echo 'Built-in vendor drivers and display providers verified.'
   exit 0
@@ -98,9 +104,10 @@ cp "$OUT/arch/arm64/boot/Image" "$OUT/vmlinux" "$OUT/System.map" "$DIST/"
 grep -aFq 'wlan/qca_cld/qca6750/WCNSS_qcom_cfg.ini' "$DIST/Image" || {
   echo 'Missing QCA6750 firmware configuration namespace' >&2; exit 1;
 }
-for symbol in wlan_hdd_state_fops rmnet_link_ops rmnet_ctl_register_client; do
+for symbol in wlan_hdd_state_fops rmnet_link_ops rmnet_ctl_register_client \
+  tfa98xx_i2c_probe; do
   grep -Eq "[[:space:]]${symbol}$" "$DIST/System.map" || {
-    echo "Missing linked network provider: $symbol" >&2; exit 1;
+    echo "Missing linked device provider: $symbol" >&2; exit 1;
   }
 done
 if [ -f "$OUT/Module.symvers" ]; then cp "$OUT/Module.symvers" "$DIST/"; fi
