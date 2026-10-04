@@ -72,6 +72,29 @@ CI [37210740264](https://github.com/ylmzer/lisa-kernel/actions/runs/37210740264)
 has passed the upstream source check, codec/boot-log/NetBpfLoad tests,
 MIUI ioctl ABI and asynchronous payload tests, and complete built-in vendor
 driver compilation with required display symbols. Full Image compilation and
-packaging are still running. Local checks confirm all 89 panel command/state
+packaging also completed successfully. Local checks confirm all 89 panel command/state
 indices agree, including dimming, HBM and doze exit. No new candidate has been
 installed; visible display success is not yet established.
+
+Comparison of the saved working Image's sysfs attribute descriptors confirms
+`max_brightness_clone` is read-only (0444). Its two writable `brightness`
+descriptors lead through CFI branch trampolines to the standard backlight and
+LED class store functions; their parsing, locking and work-flush operations
+match the available source. They do not establish a missing MIUI brightness
+store callback. Binary reports remain in ignored private storage.
+
+## Verified candidate package
+
+Downloaded artifact SHA-256 matches GitHub's digest:
+`cbaaca910316abbb47f0ea4ff117ae29333d33915356c1297a87ee00e0454896`.
+Archive integrity, all manifest checksums, ARM64/configuration checks, the
+linked NetBpfLoad boundary, and eight required MIUI display symbols pass.
+The installer contains the exact verified Image and no replacement DTB,
+DTBO or modules.
+
+Local candidate: `dist/bootdiag/20261004-display-ab4f5ee5/lisa-display-compat.zip`.
+ZIP SHA-256: `699dceda364043d1a25ee03429e325b43035030e53db246eb6be02a20b850d71`.
+Image SHA-256: `c951ca5fe05aa5fd05e075c571d691477968086fb2bf532e81e4c64ce653a112`.
+The intended separately named phone copy is `lisa-display-compat-ab4f5ee5.zip`.
+USB ADB is currently unavailable; no copy or installation has occurred.
+Android boot and visible display remain unverified for this candidate.
