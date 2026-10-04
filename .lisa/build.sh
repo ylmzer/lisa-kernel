@@ -53,7 +53,7 @@ ARGS=(O="$OUT" ARCH=arm64 TARGET_PRODUCT=lisa LLVM=1 LLVM_IAS=1
 cp .lisa/configs/tachyon-reference.config "$OUT/.config"
 scripts/config --file "$OUT/.config" --set-str LOCALVERSION "-lisa-ylmzer" \
   -d LOCALVERSION_AUTO -d KSU -d MODULE_FORCE_LOAD -e LISA_NETBPFLOAD_COMPAT \
-  -d RMNET -e RMNET_CORE -e RMNET_CTL
+  -d RMNET -e RMNET_CORE -e RMNET_CTL -d I2C_RTC6226_QCA
 if [ "${BOOT_LOG:-0}" = 1 ]; then
   scripts/config --file "$OUT/.config" -e LISA_BOOTLOG \
     --set-str LOCALVERSION "-lisa-bootdiag"
@@ -63,6 +63,8 @@ fi
 cp "$OUT/.config" "$DIST/requested.config"
 make "${ARGS[@]}" olddefconfig 2>&1 | tee "$DIST/config.log"
 cp "$OUT/.config" "$DIST/resolved.config"
+grep -qx 'CONFIG_INPUT_AW8624_HAPTIC=y' "$OUT/.config"
+grep -qx '# CONFIG_I2C_RTC6226_QCA is not set' "$OUT/.config"
 python3 .lisa/config_audit.py "$DIST/requested.config" "$DIST/resolved.config" \
   > "$DIST/config-diff.txt"
 python3 .lisa/techpack_audit.py > "$DIST/techpack-config.txt"
