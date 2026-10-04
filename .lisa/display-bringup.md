@@ -59,3 +59,19 @@ Next work must trace brightness delivery, account for the ROM's feature ABI,
 and integrate actual driver operations and dependencies before producing a
 new test build. All raw logs, screenshots, and boot images remain local in
 ignored private capture storage.
+
+## MIUI restoration candidate
+
+`ab4f5ee5324de15461aea673770843aa5afd3a49` restores the Lisa MIUI display
+feature driver, its original ioctl header, panel command/configuration support,
+power/AOD transitions, event notifications and thermal brightness interfaces.
+The read-only brightness attributes use panel state and parsed limits.
+[Source provenance and adaptations](mi-display-source.md) are recorded.
+
+CI [37210740264](https://github.com/ylmzer/lisa-kernel/actions/runs/37210740264)
+has passed the upstream source check, codec/boot-log/NetBpfLoad tests,
+MIUI ioctl ABI and asynchronous payload tests, and complete built-in vendor
+driver compilation with required display symbols. Full Image compilation and
+packaging are still running. Local checks confirm all 89 panel command/state
+indices agree, including dimming, HBM and doze exit. No new candidate has been
+installed; visible display success is not yet established.
