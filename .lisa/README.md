@@ -22,7 +22,9 @@ döngüsüne girdi. 4 Ekim bootdiag testi NetBpfLoad'un 5.10 sürüm kontrolün�
 ilk engel olarak kaydetti; çalışan Tachyon'daki süreç bazlı uyumluluk davranışı
 doğrulandı ve kaynakta eklendi. [Açılış bulguları](compatibility.md) ve
 [düzeltmenin kapsamı](netbpfload-compat.md) ayrıca kayıtlıdır. Yeni paketin
-cihazda açılışı doğrulanana kadar Chromium çalışması bekletilir.
+cihaz testinde Android açılışını tamamladı; fiziksel ekran animasyonun ardından
+siyah kaldı. [Ekran incelemesi](display-bringup.md) sürüyor; görünür ekran
+kullanımı sağlanana kadar Chromium çalışması bekletilir.
 
 Chromium tabanlı tarayıcılarda gözlenen native süreç başlatma sorununu,
 KernelSU kancaları bulunmayan bir kernel ile karşılaştırmak. Önceki kayıtlarda

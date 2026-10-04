@@ -59,7 +59,12 @@ overlapping word comparisons), release 5.10.248 and diagnostic marker.
 The unchanged CI ZIP was locally renamed `lisa-netbpf-compat.zip` to avoid
 confusion with the already-tested recorder-only package. Its SHA256 is
 `079589429ab1be5792243b35ec87139ed41b8d6e359dc8f9e0706bc71340ceb9`.
-This new package has not yet been installed or tested on the phone.
+The user installed this package on 4 October 2026. Two observed Android boots
+report `bpf.progs_loaded=1` and `sys.boot_completed=1`; the compatibility hook
+and expected loader version are recorded. The physical display remains black
+after the animation, including on an awake sample with a rendered lockscreen.
+See [display bring-up](display-bringup.md). Visible usability and networking
+are not yet validated.
 
 The AOSP service definition documents failure-triggered reboot:
 https://android.googlesource.com/platform/packages/modules/Connectivity/+/48646b0d0a5e03461fb872da9c4d3961dbd78fac/netbpfload/netbpfload.mainline.rc

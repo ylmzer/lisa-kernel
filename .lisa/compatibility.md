@@ -15,9 +15,12 @@ NetBpfLoad'un gördüğü sürüm 5.10.248 ve `bpf.progs_loaded=1`.
 
 `22655521f` kaynak sürümü root `netbpfload` için bu uyumluluk davranışını
 ekler. Kapsam/test ayrıntıları [NetBpfLoad uyumluluk kaydında](netbpfload-compat.md).
-Yeni paketin Android açılışı henüz doğrulanmadı; diğer BPF gereksinimlerinin
-sağlandığı veya boot sorununun tamamen çözüldüğü iddia edilmez.
-Chrome incelemesi Android açılışı sağlanana kadar bekletilir.
+Yeni paket kullanıcı tarafından yüklendi. İki açılışta `bpf.progs_loaded=1`
+ve `sys.boot_completed=1` doğrulandı; logo döngüsündeki ilk engel aşıldı.
+Ancak animasyondan sonra fiziksel ekran siyah kalıyor. Uyanık durumdaki ekran
+görüntüsünde kilit ekranı çizilmiş; görünür ekran kullanımı henüz sağlanmadı.
+[Ekran incelemesi](display-bringup.md) gerçek bulguları ve açık soruları kaydeder.
+Chrome incelemesi kullanılabilir Android açılışı sağlanana kadar bekletilir.
 
 ## İlk cihaz testi: açılış başarısız
 
