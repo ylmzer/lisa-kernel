@@ -1,5 +1,24 @@
 # HyperOS port uyumluluğu: doğrulanmış farklar
 
+## 4 Ekim 2026: ilk Android açılış engeli kaydedildi
+
+Bootdiag kaynak sürümü `c18e4724` cihazda denendi; logo döngüsü yeniden oluştu.
+Oops bölümünden üç açılışa ait altı geçerli snapshot alındı. İki Android
+denemesinde `NetBpfLoad: Android 25Q4 requires kernel 5.10.` mesajını sistem
+kapatma işlemleri izliyor. Yüklü loader bu kontrolden 7 hata koduyla çıkıyor;
+APEX servis tanımı başarısızlıkta `reboot,bpfloader-failed` istiyor.
+
+Çalışan Tachyon, yalnızca belirli root süreçlerinin uname yanıtını 5.10.248
+olarak değiştiriyor. NetBpfLoad için bu davranış hem kernel imajının makine
+kodunda hem çalışan Android günlüğünde doğrulandı. Gerçek kernel 5.4.302,
+NetBpfLoad'un gördüğü sürüm 5.10.248 ve `bpf.progs_loaded=1`.
+
+`22655521f` kaynak sürümü root `netbpfload` için bu uyumluluk davranışını
+ekler. Kapsam/test ayrıntıları [NetBpfLoad uyumluluk kaydında](netbpfload-compat.md).
+Yeni paketin Android açılışı henüz doğrulanmadı; diğer BPF gereksinimlerinin
+sağlandığı veya boot sorununun tamamen çözüldüğü iddia edilmez.
+Chrome incelemesi Android açılışı sağlanana kadar bekletilir.
+
 ## İlk cihaz testi: açılış başarısız
 
 Kullanıcı ilk tanı ZIP'ini yükledikten sonra boot logosunda tekrar tekrar

@@ -17,6 +17,13 @@ yerine, açık bir kaynak ağacı üzerinde düzenlenebilir bir tanı temeli sun
 
 ## İlk hedef
 
+Güncel öncelik Android açılışını sağlamaktır. İlk kernel testleri logo
+döngüsüne girdi. 4 Ekim bootdiag testi NetBpfLoad'un 5.10 sürüm kontrolünü
+ilk engel olarak kaydetti; çalışan Tachyon'daki süreç bazlı uyumluluk davranışı
+doğrulandı ve kaynakta eklendi. [Açılış bulguları](compatibility.md) ve
+[düzeltmenin kapsamı](netbpfload-compat.md) ayrıca kayıtlıdır. Yeni paketin
+cihazda açılışı doğrulanana kadar Chromium çalışması bekletilir.
+
 Chromium tabanlı tarayıcılarda gözlenen native süreç başlatma sorununu,
 KernelSU kancaları bulunmayan bir kernel ile karşılaştırmak. Önceki kayıtlarda
 `zygote-child` SIGABRT ve ardından GPU kanal zaman aşımı görülüyor. KernelSU
