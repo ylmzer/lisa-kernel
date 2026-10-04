@@ -4,6 +4,15 @@ On 4 October 2026 the user installed the verified `ab4f5ee5` MIUI display
 candidate and confirmed the physical screen appeared successfully. ADB records
 Android boot completion and BPF loading. Wi-Fi and mobile data do not work.
 Sleep/wake, brightness range and AOD have not yet been physically validated.
+The user subsequently also reported phone calls failing. No detailed call
+attempt capture is available yet; LTE registration is not proof of working
+voice or IMS. Do not claim RMNET fixes voice before device testing.
+
+The deferred driver-load failure unwind previously busy-waited for all
+`/dev/wlan` open references. A HAL write invokes that load while holding its
+own reference, so it could never return to close the descriptor. That failure
+wait is removed; the persistent control endpoint can report the load error
+and permit a retry. Normal unload behavior is unchanged.
 
 Wi-Fi HAL reports "Failed to access driver state control param" with ENOENT.
 `/dev/wlan` is absent, while the built-in driver only created
