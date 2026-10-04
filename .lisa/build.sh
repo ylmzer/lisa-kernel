@@ -75,7 +75,7 @@ if [ "$MODE" = bootlog-only ]; then
   echo 'Diagnostic recorder compiled; runtime recording still requires device testing.'
   exit 0
 fi
-make -j"${JOBS:-$(nproc)}" "${ARGS[@]}" \
+make -k -j"${JOBS:-$(nproc)}" "${ARGS[@]}" \
   techpack/display/ techpack/audio/ techpack/camera/ 2>&1 | tee "$DIST/vendor-build.log"
 "$LLVM_NM" --defined-only "$OUT/techpack/display/msm/built-in.a" \
   > "$DIST/display-symbols.txt"

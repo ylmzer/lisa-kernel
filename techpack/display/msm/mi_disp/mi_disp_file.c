@@ -632,6 +632,9 @@ static int mi_disp_ioctl_write_dsi_cmd(
 	struct dsi_cmd_rw_ctl ctl;
 	int ret = 0;
 
+	if (req->tx_len > PAGE_SIZE || req->tx_state >= MI_DSI_CMD_MAX_STATE)
+		return -EINVAL;
+
 	ret = mutex_lock_interruptible(&client->client_lock);
 	if (ret)
 		return ret;
@@ -691,6 +694,11 @@ static int mi_disp_ioctl_read_dsi_cmd(
 	u32 recv_len;
 	int ret = 0;
 	int i = 0;
+
+	if (req->tx_len > PAGE_SIZE || req->rx_len > PAGE_SIZE ||
+	    req->tx_state >= MI_DSI_CMD_MAX_STATE ||
+	    req->rx_state >= MI_DSI_CMD_MAX_STATE)
+		return -EINVAL;
 
 	ret = mutex_lock_interruptible(&client->client_lock);
 	if (ret)
@@ -811,6 +819,17 @@ int mi_disp_ioctl_get_bic_data(struct disp_feature_client *client, void *data)
 	char *bic_reg = NULL;
 	int len = 0;
 	int ret = 0;
+
+	if (!is_support_disp_id(disp_id))
+		return -EINVAL;
+	dd_ptr = &df->d_display[disp_id];
+	dsi_display = dd_ptr->display;
+	if (dd_ptr->intf_type != MI_INTF_DSI || !dsi_display || !dsi_display->panel)
+		return -ENODEV;
+	if (!dsi_display->panel->mi_cfg.nvt_bic_enabled)
+		return -EOPNOTSUPP;
+	if (req->type > 1 || req->bic_reg_len > sizeof(dsi_display->panel->mi_cfg.bic_reg_data))
+		return -EINVAL;
 
 	ret = mutex_lock_interruptible(&client->event_lock);
 	if (ret)
