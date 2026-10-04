@@ -85,3 +85,17 @@ flag to `qca6750`, selecting the real INI/MAC namespace while retaining
 the HAL device name. External module builds and other chip defaults are
 unchanged. Final Image verification now requires the actual QCA6750 INI
 path. A new complete build and Wi-Fi device test are required.
+
+## Wi-Fi device result and remaining scope
+
+The user installed the fully verified `de5d98fd` candidate and confirmed
+Wi-Fi connects. Device logs show the chip-specific INI loads and wlan0
+connects. Subsequent audio/haptics candidates retain this configuration.
+The user also reports hotspot opens and explicitly requested no further
+hotspot work. After installing `dd06b185`, the user confirms two-way call
+audio, including microphone operation. LTE framework validation does not
+establish user-verified mobile-data browsing.
+
+The user has not seen 5G at the same location with the previous ROM/kernel;
+there is no established 5G regression baseline. Leave 5G unverified until a
+known coverage/SIM baseline can be tested, without speculative modem changes.

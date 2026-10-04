@@ -44,3 +44,17 @@ A preprocessor test reads the actual header and checks both contracts:
 six shared full-duplex interfaces for Lisa and twelve unique direction DAIs
 for the native path. A new combined audio/haptics build and device test are
 required; amplifier detection alone does not establish working audio.
+
+## Combined candidate verification
+
+CI [37226269848](https://github.com/ylmzer/lisa-kernel/actions/runs/37226269848)
+passed for source `dd06b1854478769c01ebf18656f89df6891e62d0`, including the
+actual MI2S header test, vendor preflight, full Image and installer packaging.
+The downloaded artifact digest and manifest checksums match. The installer
+contains the verified Image and the SD copy matches the ZIP SHA-256:
+`bcdbcd8d994d5294ff00bf25635ecfa7a20531466046e9f828aae47c9fdac1ec`.
+
+After user installation, the boot banner matches the Image. Android boots,
+`lahaina-yupikqrd-snd-card` registers and playback/capture PCM devices exist.
+Both TFA devices complete DSP startup. The user then confirms media sound
+from the speaker and two-way call audio, including microphone operation.
