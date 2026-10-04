@@ -1447,4 +1447,3 @@ static int msm_dai_q6_mi2s_dev_remove(struct platform_device *pdev)
 	snd_soc_unregister_component(&pdev->dev);
 	return 0;
 }
-
