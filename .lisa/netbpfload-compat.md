@@ -48,5 +48,18 @@ root/name boundaries and preservation of other UTS fields. It also compiles
 kernel/sys.o before the full diagnostic build. Source and artifact checks
 are not a substitute for device validation.
 
+The full build of `22655521f8608363586de7a524cd7f2383a15441` succeeded:
+https://github.com/ylmzer/lisa-kernel/actions/runs/37200397647
+The downloaded artifact archive matched GitHub's SHA256. Manifest checksums,
+ARM64 Image/ELF headers, final display symbols, installer restrictions and
+packaged Image equality passed. Disassembly of the linked newuname confirms
+the uid/name branches, exact name including its NUL (LLVM folds strcmp into
+overlapping word comparisons), release 5.10.248 and diagnostic marker.
+
+The unchanged CI ZIP was locally renamed `lisa-netbpf-compat.zip` to avoid
+confusion with the already-tested recorder-only package. Its SHA256 is
+`079589429ab1be5792243b35ec87139ed41b8d6e359dc8f9e0706bc71340ceb9`.
+This new package has not yet been installed or tested on the phone.
+
 The AOSP service definition documents failure-triggered reboot:
 https://android.googlesource.com/platform/packages/modules/Connectivity/+/48646b0d0a5e03461fb872da9c4d3961dbd78fac/netbpfload/netbpfload.mainline.rc
