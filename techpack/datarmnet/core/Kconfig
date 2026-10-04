@@ -3,7 +3,8 @@
 #
 
 menuconfig RMNET_CORE
-	default m 
+	tristate "Qualcomm RMNET MAP data path"
+	depends on NET && INET && QCOM_QMI_HELPERS && !RMNET
 	select GRO_CELLS
 	---help---
 	  If you select this, you will enable the RMNET module which is used
@@ -12,7 +13,8 @@ menuconfig RMNET_CORE
 	  any IP mode physical device.
 
 menuconfig RMNET_CTL
-	default m
+	tristate "Qualcomm RMNET IPA control channel"
+	depends on RMNET_CORE && IPA3
 	---help---
 	  Enable the RMNET CTL module which is used for handling QMAP commands
 	  for flow control purposes.

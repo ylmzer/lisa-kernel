@@ -51,7 +51,8 @@ ARGS=(O="$OUT" ARCH=arm64 LLVM=1 LLVM_IAS=1
 } > "$DIST/build-info.txt"
 cp .lisa/configs/tachyon-reference.config "$OUT/.config"
 scripts/config --file "$OUT/.config" --set-str LOCALVERSION "-lisa-ylmzer" \
-  -d LOCALVERSION_AUTO -d KSU -d MODULE_FORCE_LOAD -e LISA_NETBPFLOAD_COMPAT
+  -d LOCALVERSION_AUTO -d KSU -d MODULE_FORCE_LOAD -e LISA_NETBPFLOAD_COMPAT \
+  -d RMNET -e RMNET_CORE -e RMNET_CTL
 if [ "${BOOT_LOG:-0}" = 1 ]; then
   scripts/config --file "$OUT/.config" -e LISA_BOOTLOG \
     --set-str LOCALVERSION "-lisa-bootdiag"
@@ -76,7 +77,8 @@ if [ "$MODE" = bootlog-only ]; then
   exit 0
 fi
 make -k -j"${JOBS:-$(nproc)}" "${ARGS[@]}" \
-  techpack/display/ techpack/audio/ techpack/camera/ 2>&1 | tee "$DIST/vendor-build.log"
+  techpack/display/ techpack/audio/ techpack/camera/ techpack/datarmnet/ \
+  2>&1 | tee "$DIST/vendor-build.log"
 "$LLVM_NM" --defined-only "$OUT/techpack/display/msm/built-in.a" \
   > "$DIST/display-symbols.txt"
 for symbol in mi_disp_register_client mi_disp_unregister_client \
@@ -93,6 +95,11 @@ fi
 make -j"${JOBS:-$(nproc)}" "${ARGS[@]}" Image dtbs 2>&1 | tee "$DIST/build.log"
 test -s "$OUT/arch/arm64/boot/Image"
 cp "$OUT/arch/arm64/boot/Image" "$OUT/vmlinux" "$OUT/System.map" "$DIST/"
+for symbol in wlan_hdd_state_fops rmnet_link_ops rmnet_ctl_register_client; do
+  grep -Eq "[[:space:]]${symbol}$" "$DIST/System.map" || {
+    echo "Missing linked network provider: $symbol" >&2; exit 1;
+  }
+done
 if [ -f "$OUT/Module.symvers" ]; then cp "$OUT/Module.symvers" "$DIST/"; fi
 tar -czf "$DIST/dtbs.tar.gz" -C "$OUT/arch/arm64/boot" dts
 (cd "$DIST" && sha256sum Image vmlinux System.map resolved.config dtbs.tar.gz > SHA256SUMS)

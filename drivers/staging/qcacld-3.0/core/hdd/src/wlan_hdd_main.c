@@ -16897,12 +16897,27 @@ static void hdd_inform_wifi_on(void)
 #endif
 
 int hdd_driver_load(void);
+/* Built-in and module HAL entry points share the same deferred load. */
+static DEFINE_MUTEX(wlan_driver_load_lock);
+
+static int wlan_hdd_request_driver_load(void)
+{
+	int ret = 0;
+
+	mutex_lock(&wlan_driver_load_lock);
+	if (!hdd_loaded)
+		ret = hdd_driver_load();
+	mutex_unlock(&wlan_driver_load_lock);
+
+	return ret;
+}
+
 static ssize_t wlan_hdd_state_ctrl_param_write(struct file *filp,
 						const char __user *user_buf,
 						size_t count,
 						loff_t *f_pos)
 {
-	char buf[3];
+	char buf[3] = { 0 };
 	static const char wlan_off_str[] = "OFF";
 	static const char wlan_on_str[] = "ON";
 	int ret;
@@ -16910,7 +16925,10 @@ static ssize_t wlan_hdd_state_ctrl_param_write(struct file *filp,
 	struct hdd_context *hdd_ctx;
 	bool turning_on = false;
 
-	if (copy_from_user(buf, user_buf, 3)) {
+	if (count < 2)
+		return -EINVAL;
+
+	if (copy_from_user(buf, user_buf, min(count, sizeof(buf)))) {
 		pr_err("Failed to read buffer\n");
 		return -EINVAL;
 	}
@@ -16928,13 +16946,14 @@ static ssize_t wlan_hdd_state_ctrl_param_write(struct file *filp,
 
 	if (strncmp(buf, wlan_on_str, strlen(wlan_on_str)) != 0) {
 		pr_err("Invalid value received from framework");
-		goto exit;
+		return -EINVAL;
 	}
 
 	if (!hdd_loaded) {
-		if (hdd_driver_load()) {
+		ret = wlan_hdd_request_driver_load();
+		if (ret) {
 			pr_err("%s: Failed to init hdd module\n", __func__);
-			goto exit;
+			return ret;
 		}
 	}
 
@@ -16993,7 +17012,7 @@ const struct file_operations wlan_hdd_state_fops = {
 	.release = wlan_hdd_state_ctrl_param_release,
 };
 
-#if defined(MODULE) && !defined(FEATURE_WLAN_RESIDENT_DRIVER)
+#if !defined(FEATURE_WLAN_RESIDENT_DRIVER)
 static int wlan_hdd_state_ctrl_param_create(void)
 {
 	unsigned int wlan_hdd_state_major = 0;
@@ -17969,7 +17988,7 @@ static ssize_t wlan_boot_cb(struct kobject *kobj,
 		return -EALREADY;
 	}
 
-	if (hdd_driver_load())
+	if (wlan_hdd_request_driver_load())
 		return -EIO;
 
 	wlan_loader->loaded_state = MODULE_INITIALIZED;
@@ -18102,8 +18121,17 @@ static int __init hdd_module_init(void)
 	int ret = -EINVAL;
 
 	ret = wlan_init_sysfs();
-	if (ret)
+	if (ret) {
 		hdd_err("Failed to create sysfs entry");
+		return ret;
+	}
+
+#ifndef FEATURE_WLAN_RESIDENT_DRIVER
+	/* The vendor HAL writes ON/OFF here after firmware storage is ready. */
+	ret = wlan_hdd_state_ctrl_param_create();
+	if (ret)
+		wlan_deinit_sysfs();
+#endif
 
 	return ret;
 }

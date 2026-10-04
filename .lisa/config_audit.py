@@ -24,6 +24,7 @@ critical = (
     "CNSS_QCA6750", "SND_SOC", "SECCOMP", "SECCOMP_FILTER",
     "MEMFD_CREATE", "MODVERSIONS", "ZRAM", "CRYPTO_LZ4KD",
     "LZ4KD_COMPRESS", "LZ4KD_DECOMPRESS", "ARM64_4K_PAGES", "LISA_NETBPFLOAD_COMPAT",
+    "RMNET_CORE", "RMNET_CTL", "QCA_CLD_WLAN",
 )
 failures = [f"CONFIG_{key}" for key in critical if resolved.get(f"CONFIG_{key}") != "y"]
 modules = [key for key, value in resolved.items() if value == "m"]

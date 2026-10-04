@@ -98,3 +98,9 @@ Image SHA-256: `c951ca5fe05aa5fd05e075c571d691477968086fb2bf532e81e4c64ce653a112
 The intended separately named phone copy is `lisa-display-compat-ab4f5ee5.zip`.
 USB ADB is currently unavailable; no copy or installation has occurred.
 Android boot and visible display remain unverified for this candidate.
+
+Later the same day, the candidate was copied to external SD with its device
+SHA-256 verified. The user installed it and confirmed successful physical
+display. Android/BPF boot completes. Wi-Fi and cellular data are now the
+reported failures; see [network bring-up](network-bringup.md). Physical
+sleep/wake, AOD and the full brightness range remain unverified.
