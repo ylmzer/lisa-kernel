@@ -130,3 +130,33 @@ DRM yaması ile tanı kernelini aynı anda test etmek yerine önce ayrı sonuçl
 alınmalıdır. Sisteme uygulanacak dosyalar için tam hash doğrulaması, geri dönüş
 ve metadata/SELinux korunması gerekir. Mobil PC bağlantısını bozacak kurulum
 veya yeniden başlatma ajan tarafından yapılmadı.
+
+
+## Capability backport candidate after diagnostic boot
+
+The user installed aeec36ed and confirmed Chrome still stalls. Boot completed
+with the expected 09:10:49 banner and cap_last_cap=39. Two native zygote children
+(PID 18050 and 18994) recorded the same syscall sequence: successful initial
+prctl/capset, 40 successful bounding query/drop pairs, then syscall 167 returns
+-EINVAL at record 83. Both later abort with SIGABRT. The ROM binary includes bit
+40 in its bounding-set complement and aborts on cap_within_bound failure. The
+diagnostic does not record prctl arguments; the sequence and binary establish a
+strong match to the unsupported CAP_CHECKPOINT_RESTORE query, without a child
+backtrace. Crash-dump helper EPERM results occur in different PIDs after the
+initial abort and are not used as its cause. Chrome also later SIGTRAPs; other
+startup blockers, including the separate missing DRM provider, can remain.
+
+Backport upstream commits 124ea650d3072b005457faed69909221c2905a1f,
+b9a3db92e1a1f281724e2f34b849d18d1a53bece and
+12886f8ab10ce6a09af1d92535d49c81aaa215a8 together: capability 40 UAPI, real
+namespace permission helper, SELinux capability2 mapping, ns_last_pid and
+map_files gates. Existing CAP_SYS_ADMIN fallback and initial-user-namespace
+requirement for map_files remain. The original capability query/drop code and
+permission checks remain intact. No fake syscall results or capability grants.
+The set_tid follow-up does not apply because this tree lacks clone3 set_tid.
+
+A host harness exercises the actual query/drop implementation and namespace
+helper: valid/invalid capability boundaries, denied permission without writes,
+allocation failure, only the requested bounding bit removed, and child namespace
+grants not authorizing initial namespace operations. Final kernel compilation and
+manual Chrome testing are still required. DRM files remain a separate candidate.
