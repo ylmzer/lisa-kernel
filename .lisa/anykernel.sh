@@ -18,7 +18,7 @@ PATCH_VBMETA_FLAG=0;
 NO_MAGISK_CHECK=1;
 . tools/ak3-core.sh;
 ui_print "ylmzer-HyperOSPro kernel kuruluyor...";
-ui_print "Kernel surumu: 5.4.302 HyperOSPro";
+ui_print "Kernel surumu: 5.4.302-HyperOSPro";
 ui_print "Mevcut boot imaji okunuyor...";
 dump_boot;
 ui_print "Yeni kernel boot imajina ekleniyor ve yaziliyor...";

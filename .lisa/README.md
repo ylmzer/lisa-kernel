@@ -27,7 +27,7 @@ saptanmadı; uzun süreli RAM ve enerji tüketimi incelemeleri bekliyor.
 alanına aittir; kernel paketinin içeriği değildir. Kaynak geçmişi ve güncel
 [derleme bağlantıları](../README.md) ana README'de bulunur.
 
-Yeni kernel sürüm metni `5.4.302 HyperOSPro`, TWRP yükleyici adı
+Yeni kernel sürüm metni `5.4.302-HyperOSPro`, TWRP yükleyici adı
 `ylmzer-HyperOSPro` ve ZIP adı `ylmzer-HyperOSPro.zip` olarak ayarlanmıştır.
 Yeni adlandırılan derlemenin çıktısı ve cihaz testi ayrıca doğrulanmalıdır.
 KernelSU/ReSukiSU eklenmemiştir. LZ4KD desteğinin kaynak bilgileri

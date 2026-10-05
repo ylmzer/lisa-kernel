@@ -22,11 +22,11 @@ henüz kapsamlı olarak doğrulanmadı.
 
 ## Kernel ve yükleme paketi
 
-- Yeni derlemelerde kernel sürümü: `5.4.302 HyperOSPro`.
+- Yeni derlemelerde kernel sürümü: `5.4.302-HyperOSPro`.
 - TWRP yükleyici adı: `ylmzer-HyperOSPro`.
 - AnyKernel3 paketi: `ylmzer-HyperOSPro.zip`.
 - [Son cihazda doğrulanan kernel derlemesi](https://github.com/ylmzer/lisa-kernel/actions/runs/37275763441): `d5aea08865560cc00f92f26f0041fc776003b942`.
-- [Yeni adlandırmayı içeren derleme](https://github.com/ylmzer/lisa-kernel/actions/runs/37354106357): `18fee1b90ea972632ac8f50f93ce62984cb61320`; bu belge güncellenirken sürüyor, çıktısı henüz doğrulanmadı ve cihazda kurulmadı.
+- [Yeni adlandırmayı içeren derleme](https://github.com/ylmzer/lisa-kernel/actions/runs/37354106357): `18fee1b90ea972632ac8f50f93ce62984cb61320`; çıktı doğrulandı ve kullanıcı yükledi. Boşluklu sürüm metni Ayarlar’da `Unavailable` gösterdiği için yeni sürümlerde tire kullanılır.
 
 Paket mevcut boot imajına yeni kerneli yerleştirir; ROM'un ramdisk, DTB ve
 DTBO bileşenlerini korur. KernelSU/ReSukiSU eklenmemiştir; yükleyici vbmeta
