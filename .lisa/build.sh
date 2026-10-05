@@ -27,6 +27,8 @@ if [ "${USE_CCACHE:-0}" = 1 ]; then
 fi
 export ARCH=arm64
 export KBUILD_BUILD_USER=ylmzer
+# Keep the visible release exact: suppress Git's automatic '+' suffix.
+export LOCALVERSION=""
 export KBUILD_BUILD_HOST=lisa-builder
 export KBUILD_BUILD_VERSION=1
 export KBUILD_BUILD_TIMESTAMP="$(git show -s --format=%cD HEAD)"
@@ -52,12 +54,11 @@ ARGS=(O="$OUT" ARCH=arm64 TARGET_PRODUCT=lisa LLVM=1 LLVM_IAS=1
   dpkg-query -W clang-14 llvm-14 lld-14 2>/dev/null || true
 } > "$DIST/build-info.txt"
 cp .lisa/configs/tachyon-reference.config "$OUT/.config"
-scripts/config --file "$OUT/.config" --set-str LOCALVERSION "-lisa-ylmzer" \
+scripts/config --file "$OUT/.config" --set-str LOCALVERSION "-ylmzer-HyperOSPro" \
   -d LOCALVERSION_AUTO -d KSU -d MODULE_FORCE_LOAD -e LISA_NETBPFLOAD_COMPAT \
   -d RMNET -e RMNET_CORE -e RMNET_CTL -d I2C_RTC6226_QCA
 if [ "${BOOT_LOG:-0}" = 1 ]; then
-  scripts/config --file "$OUT/.config" -e LISA_BOOTLOG \
-    --set-str LOCALVERSION "-lisa-bootdiag"
+  scripts/config --file "$OUT/.config" -e LISA_BOOTLOG
 else
   scripts/config --file "$OUT/.config" -d LISA_BOOTLOG
 fi
@@ -69,6 +70,11 @@ fi
 cp "$OUT/.config" "$DIST/requested.config"
 make "${ARGS[@]}" olddefconfig 2>&1 | tee "$DIST/config.log"
 cp "$OUT/.config" "$DIST/resolved.config"
+KERNEL_RELEASE=$(make -s "${ARGS[@]}" kernelrelease)
+[ "$KERNEL_RELEASE" = '5.4.302-ylmzer-HyperOSPro' ] || {
+  echo "Unexpected kernel release: $KERNEL_RELEASE" >&2; exit 1;
+}
+echo "kernel_release=$KERNEL_RELEASE" >> "$DIST/build-info.txt"
 grep -qx 'CONFIG_INPUT_AW8624_HAPTIC=y' "$OUT/.config"
 grep -qx '# CONFIG_I2C_RTC6226_QCA is not set' "$OUT/.config"
 python3 .lisa/config_audit.py "$DIST/requested.config" "$DIST/resolved.config" \

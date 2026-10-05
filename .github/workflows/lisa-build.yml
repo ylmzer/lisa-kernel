@@ -1,4 +1,4 @@
-name: Build Lisa diagnostic kernel
+name: Build ylmzer-HyperOSPro kernel
 on:
   workflow_dispatch:
     inputs:
@@ -8,7 +8,7 @@ on:
         options: [config-only, build]
         default: config-only
       package:
-        description: Produce an untested AnyKernel3 diagnostic ZIP (full build only)
+        description: Produce the ylmzer-HyperOSPro AnyKernel3 ZIP (full build only)
         type: boolean
         default: false
       boot_log:
@@ -95,7 +95,7 @@ jobs:
           repository: osm0sis/AnyKernel3
           ref: 020dfeccf9d7e962a48400fc94d3e451df92eead
           path: out/anykernel
-      - name: Package diagnostic image
+      - name: Package ylmzer-HyperOSPro image
         if: inputs.mode == 'build' && inputs.package
         env:
           BOOT_LOG: ${{ inputs.boot_log && '1' || '0' }}
@@ -108,10 +108,9 @@ jobs:
           cp dist/lisa/Image out/anykernel/Image
           python3 - <<'PY'
           from pathlib import Path
-          import os
           import zipfile
           root = Path('out/anykernel')
-          package_name = 'lisa-bootdiag.zip' if os.environ['BOOT_LOG'] == '1' else 'lisa-diagnostic.zip'
+          package_name = 'ylmzer-HyperOSPro.zip'
           with zipfile.ZipFile('dist/lisa/' + package_name, 'w', zipfile.ZIP_DEFLATED) as archive:
               for path in sorted(root.rglob('*')):
                   relative = path.relative_to(root)
@@ -122,11 +121,7 @@ jobs:
                   archive.write(path, relative.as_posix())
           PY
           cd dist/lisa
-          if [ "$BOOT_LOG" = 1 ]; then
-            sha256sum lisa-bootdiag.zip >> SHA256SUMS
-          else
-            sha256sum lisa-diagnostic.zip >> SHA256SUMS
-          fi
+          sha256sum ylmzer-HyperOSPro.zip >> SHA256SUMS
       - name: Record compiler cache statistics
         if: always() && inputs.mode == 'build'
         run: |
@@ -142,7 +137,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: lisa-${{ inputs.mode }}-${{ github.run_id }}
+          name: ylmzer-HyperOSPro-${{ inputs.mode }}-${{ github.run_id }}
           path: dist/lisa/
           if-no-files-found: warn
           retention-days: 14

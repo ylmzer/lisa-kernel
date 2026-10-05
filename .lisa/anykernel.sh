@@ -1,6 +1,6 @@
-### AnyKernel3 lisa diagnostic package
+### AnyKernel3 ylmzer-HyperOSPro package
 properties() { '
-kernel.string=Lisa 5.4.302 diagnostic kernel by ylmzer
+kernel.string=ylmzer-HyperOSPro - 5.4.302
 do.devicecheck=1
 do.modules=0
 do.systemless=0
@@ -17,7 +17,7 @@ RAMDISK_COMPRESSION=auto;
 PATCH_VBMETA_FLAG=0;
 NO_MAGISK_CHECK=1;
 . tools/ak3-core.sh;
-ui_print "Diagnostic build: Chromium fix and device compatibility are unverified.";
-ui_print "KernelSU/ReSukiSU is not included in this build.";
+ui_print "ylmzer-HyperOSPro kernel kuruluyor...";
+ui_print "Xiaomi 11 Lite 5G NE (lisa) - 5.4.302";
 dump_boot;
 write_boot;
