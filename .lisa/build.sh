@@ -54,7 +54,7 @@ ARGS=(O="$OUT" ARCH=arm64 TARGET_PRODUCT=lisa LLVM=1 LLVM_IAS=1
   dpkg-query -W clang-14 llvm-14 lld-14 2>/dev/null || true
 } > "$DIST/build-info.txt"
 cp .lisa/configs/tachyon-reference.config "$OUT/.config"
-scripts/config --file "$OUT/.config" --set-str LOCALVERSION "-ylmzer-HyperOSPro" \
+scripts/config --file "$OUT/.config" --set-str LOCALVERSION " HyperOSPro" \
   -d LOCALVERSION_AUTO -d KSU -d MODULE_FORCE_LOAD -e LISA_NETBPFLOAD_COMPAT \
   -d RMNET -e RMNET_CORE -e RMNET_CTL -d I2C_RTC6226_QCA
 if [ "${BOOT_LOG:-0}" = 1 ]; then
@@ -71,7 +71,7 @@ cp "$OUT/.config" "$DIST/requested.config"
 make "${ARGS[@]}" olddefconfig 2>&1 | tee "$DIST/config.log"
 cp "$OUT/.config" "$DIST/resolved.config"
 KERNEL_RELEASE=$(make -s "${ARGS[@]}" kernelrelease)
-[ "$KERNEL_RELEASE" = '5.4.302-ylmzer-HyperOSPro' ] || {
+[ "$KERNEL_RELEASE" = '5.4.302 HyperOSPro' ] || {
   echo "Unexpected kernel release: $KERNEL_RELEASE" >&2; exit 1;
 }
 echo "kernel_release=$KERNEL_RELEASE" >> "$DIST/build-info.txt"
