@@ -38,10 +38,6 @@ Temel kaynak [xiaomi-lisa-devs/android_kernel_xiaomi_sm8350](https://github.com/
 `lineage-23.2`, commit `7ede20c8692e0e0fc044754429e33cfd1d75c40d`.
 Bu temel üzerinde Lisa ve Android 17 uyarlamaları geliştirilir.
 
-Tachyon yalnızca cihazdan alınan ayar ve davranış referansıdır; bu repo
-Tachyon kaynak kodu değildir. Xiaomi ekran kodunun ve LZ4KD desteğinin
-kaynakları, lisansları ve telif bildirimleri korunur.
-
 - [Proje ve derleme belgesi](.lisa/README.md)
 - [Xiaomi ekran kodunun kaynağı](.lisa/mi-display-source.md)
 - [LZ4KD kaynağı](.lisa/lz4kd-source.md)
