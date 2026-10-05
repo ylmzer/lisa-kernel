@@ -160,3 +160,37 @@ helper: valid/invalid capability boundaries, denied permission without writes,
 allocation failure, only the requested bounding bit removed, and child namespace
 grants not authorizing initial namespace operations. Final kernel compilation and
 manual Chrome testing are still required. DRM files remain a separate candidate.
+
+
+## Device validation of d5aea088
+
+The user installed the capability correction and reports Chrome opens and works.
+A fresh boot (137a214d-6d9a-4a65-a097-181d3830f012) has the expected
+10:04:36 build banner, boot_completed=1 and cap_last_cap=40. The native Chrome
+zygote and a NativeOnlySandboxedProcessService child are live. All first 256
+diagnostic syscall results are nonnegative; the retained current log contains
+no Fatal signal. This confirms the Chrome startup improvement on this device,
+not every future process or app. Widevine AIDL lookup waits remain in background
+threads and the separately prepared MediaDrm candidate is not installed.
+BonusFlash startup/DRM validation remains outstanding.
+
+
+## Remaining BonusFlash DRM test candidate
+
+The current 11:40:36 BonusFlash startup ANR again blocks on MediaDrm ->
+DrmUtils::makeDrmFactoriesAidlForUuid -> AServiceManager_waitForService.
+The two guarded MediaDrm libraries were applied to the user's CRB project.
+An isolated source extracted from the original A17 system image was rebuilt
+with its own original permissions/capabilities/SELinux contexts. All 3486 paths
+retain their metadata, links and attributes; only the two library contents differ
+among 3038 regular files. Image size is unchanged and ten 4KiB blocks differ.
+
+Private apply/restore ZIPs carry only these block versions. Recovery guards
+require lisa, TWRP, an unmounted active-slot system mapping, exact partition size
+and full baseline/candidate image hash. Payload blocks and their existing target
+contents are checked before writing, final image hash is checked afterward, and
+write/final-hash failures attempt and verify restoring the pre-update blocks.
+Host fixture tests passed for apply/restore/idempotence, different-image and
+corrupt-payload rejection, write failure and corrupt-output rollback. No device
+installation occurred: USB is offline and the user was asked to reconnect.
+Existing boot verification state and real HIDL plugin results still need checks.
