@@ -1,38 +1,64 @@
-# lisa-kernel
+# ylmzer-HyperOSPro
 
-**Güncel cihaz durumu (4 Ekim 2026):** Android açılışı ve BPF yüklemesi
-tamamlanıyor. `ab4f5ee5` MIUI ekran paketiyle kullanıcı fiziksel ekranın
-başarıyla geldiğini doğruladı. Wi-Fi, mobil veri ve aramalar çalışmıyor;
-tam ROM uyumluluğu henüz sağlanmadı.
+Xiaomi 11 Lite 5G NE (`lisa` / SM7325) için Linux **5.4.302** kernel projesi.
+HyperOSPro Android 17 üzerinde cihaz uyumluluğu için geliştirilir.
 
-Xiaomi 11 Lite 5G NE (`lisa` / SM7325) için bağımsız Linux 5.4.302 kaynak reposu.
+## Güncel durum — 5 Ekim 2026
 
-**Güncel öncelik: ağ ve arama işlevleri.** Wi-Fi HAL kontrol düğümü ve
-Qualcomm RMNET sürücülerinin yerleşik entegrasyonu düzeltildi; yeni
-[derleme](https://github.com/ylmzer/lisa-kernel/actions/runs/37214770327),
-testler ve paket doğrulaması geçti. Yeni paketin cihaz testi bekleniyor.
-[Ağ incelemesi](.lisa/network-bringup.md),
-[ekran sonucu](.lisa/display-bringup.md) ve
-[NetBpfLoad düzeltmesi](.lisa/netbpfload-compat.md) somut bulguları kaydeder.
+Cihazda Android açılışı, ekran, Wi-Fi, mobil internet, arama, iki yönde ses,
+SMS, hoparlör ve titreşim doğrulandı. Chromium alt süreçlerindeki başlatma
+sorunu `CAP_CHECKPOINT_RESTORE` desteğinin geri taşınmasıyla düzeltildi;
+kullanıcı Chrome'un çalıştığını doğruladı.
 
-**Derleme durumu:** Tam kernel derlemesi ve AnyKernel3 ZIP üretimi başarılı.
-İndirilen çıktılar için SHA-256, ARM64 biçimi, temel ayarlar, son kerneldeki
-ekran bildirim sembolleri ve ZIP/Image eşleşmesi doğrulandı.
-Chromium incelemesi temel cihaz işlevleri doğrulanana kadar bekletilir.
+ROM tarafındaki ayrı HIDL telefon servisi uyarlamasıyla 5G bağlantısı ve
+servis geri bildirimleri doğrulandı. BonusFlaş ve ÖSYM uygulamaları da ayrı
+`libmediadrm.so` düzeltmesiyle çalışıyor. Bu ROM düzeltmeleri kernel ZIP'ine
+dahil değildir.
 
-- [İlk başarılı tam derleme](https://github.com/ylmzer/lisa-kernel/actions/runs/37129546878)
-- Derlenen kaynak: `3a12e2b7a58f89c0f332f82978ee3de21efc7557`.
-- Kernel sürümü: `5.4.302-lisa-ylmzer+`.
-- ZIP SHA-256: `43aa38bb4b1bae00f378e27bf03933dbe07cdd4687fb8ddd7eb6ad1cc69f9a66`.
+Kısa kararlılık testinde yeniden başlama, kernel panic, OOM, ANR veya bağlantı
+kesilmesi gözlenmedi. Chrome/Edge, BonusFlaş ve ÖSYM arasında kullanıcı testi
+sorunsuz geçti. Uzun süreli RAM, pil tüketimi, termal davranış ve ağ geçişleri
+henüz kapsamlı olarak doğrulanmadı.
 
-Kaynak geçmişi, cihazdan alınan referans ayarlar, GitHub Actions derlemesi ve
-test planı için [Lisa proje belgesine](.lisa/README.md) bakın.
+## Kernel ve yükleme paketi
 
-İlk tanı sürümünde KernelSU/ReSukiSU bulunmaz. Derleme bu repodaki kaynaklardan
-yapılır. Mevcut ROM'un DTB/DTBO dosyaları otomatik değiştirilmez.
+- Yeni derlemelerde kernel sürümü: `5.4.302 HyperOSPro`.
+- TWRP yükleyici adı: `ylmzer-HyperOSPro`.
+- AnyKernel3 paketi: `ylmzer-HyperOSPro.zip`.
+- [Son cihazda doğrulanan kernel derlemesi](https://github.com/ylmzer/lisa-kernel/actions/runs/37275763441): `d5aea08865560cc00f92f26f0041fc776003b942`.
+- [Yeni adlandırmayı içeren derleme](https://github.com/ylmzer/lisa-kernel/actions/runs/37354106357): `18fee1b90ea972632ac8f50f93ce62984cb61320`; bu belge güncellenirken sürüyor, çıktısı henüz doğrulanmadı ve cihazda kurulmadı.
 
-Linux kernel belgeleri: [README](README), [COPYING](COPYING).
+Paket mevcut boot imajına yeni kerneli yerleştirir; ROM'un ramdisk, DTB ve
+DTBO bileşenlerini korur. KernelSU/ReSukiSU eklenmemiştir; yükleyici vbmeta
+bayraklarını değiştirmez. TWRP mesajları normal kernel kurulum adımlarını gösterir.
 
-Mevcut ROM'un kullandığı `lz4kd` için açık kaynak desteği eklendi; sayfa
-sıkıştırma/açma testleri ve tam derleme geçti. Bazı Xiaomi ekleri bu temelde bulunmuyor.
-[Uyumluluk farklarını](.lisa/compatibility.md) ilk cihaz testinden önce inceleyin.
+## Kaynak geçmişi
+
+Temel kaynak [xiaomi-lisa-devs/android_kernel_xiaomi_sm8350](https://github.com/xiaomi-lisa-devs/android_kernel_xiaomi_sm8350)
+`lineage-23.2`, commit `7ede20c8692e0e0fc044754429e33cfd1d75c40d`.
+Bu temel üzerinde Lisa ve Android 17 uyarlamaları geliştirilir.
+
+Tachyon yalnızca cihazdan alınan ayar ve davranış referansıdır; bu repo
+Tachyon kaynak kodu değildir. Xiaomi ekran kodunun ve LZ4KD desteğinin
+kaynakları, lisansları ve telif bildirimleri korunur.
+
+- [Proje ve derleme belgesi](.lisa/README.md)
+- [Xiaomi ekran kodunun kaynağı](.lisa/mi-display-source.md)
+- [LZ4KD kaynağı](.lisa/lz4kd-source.md)
+- [Android açılışı / NetBpfLoad](.lisa/netbpfload-compat.md)
+- [Ekran](.lisa/display-bringup.md), [ağ](.lisa/network-bringup.md), [ses](.lisa/audio-bringup.md), [titreşim](.lisa/vibration-bringup.md)
+
+## Derleme
+
+GitHub Actions → **Build ylmzer-HyperOSPro kernel** → **Run workflow**.
+`config-only` ayar denetimi, `build` tam derleme yapar; `package` seçeneği
+AnyKernel3 ZIP'ini üretir. `boot_log` ve `zygote_diag` tanılama seçenekleridir;
+kurulum adı ve sürüm metnini değiştirmez.
+
+Çıktılar arasında `Image`, `vmlinux`, `System.map`, çözülmüş ayarlar, DTB
+arşivi, derleme bilgileri ve SHA-256 listesi bulunur. CI kaynak bütünlüğünü,
+uyumluluk düzeltmelerini ve gerekli sürücü sembollerini denetler. Derleme
+başarısı ve cihaz testi ayrı doğrulama adımlarıdır.
+
+Ham cihaz kayıtları, kişisel bilgiler ve özel ROM ikilileri repoya eklenmez.
+Linux kaynak belgeleri: [README](README), [COPYING](COPYING).

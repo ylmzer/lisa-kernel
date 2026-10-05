@@ -1,8 +1,8 @@
-# Lisa kernel — ylmzer
+# Lisa kernel — ylmzer-HyperOSPro
 
 Xiaomi 11 Lite 5G NE (`lisa`, SM7325) için bağımsız Linux 5.4.302 kaynak reposu.
 Bu repo Tachyon'un kaynak kodu değildir. Kaynakları paylaşılamayan Tachyon'un
-yerine, açık bir kaynak ağacı üzerinde düzenlenebilir bir tanı temeli sunar.
+yerine, açık bir kaynak ağacı üzerinde Lisa ve Android 17 uyarlamaları sunar.
 
 ## Kaynak ve cihaz referansı
 
@@ -15,36 +15,27 @@ yerine, açık bir kaynak ağacı üzerinde düzenlenebilir bir tanı temeli sun
 - `configs/tachyon-reference.config`: doğrudan `/proc/config.gz` üzerinden
   alınan ayarlar. Aynı ayarlar, aynı kaynak veya aynı davranış anlamına gelmez.
 
-## İlk hedef
+## Güncel cihaz durumu
 
-Güncel öncelik Android açılışını sağlamaktır. İlk kernel testleri logo
-döngüsüne girdi. 4 Ekim bootdiag testi NetBpfLoad'un 5.10 sürüm kontrolünü
-ilk engel olarak kaydetti; çalışan Tachyon'daki süreç bazlı uyumluluk davranışı
-doğrulandı ve kaynakta eklendi. [Açılış bulguları](compatibility.md) ve
-[düzeltmenin kapsamı](netbpfload-compat.md) ayrıca kayıtlıdır. Yeni paketin
-cihaz testinde Android açılışını tamamladı; fiziksel ekran animasyonun ardından
-siyah kaldı. [Ekran incelemesi](display-bringup.md) sürüyor; görünür ekran
-kullanımı sağlanana kadar Chromium çalışması bekletilir.
+5 Ekim 2026 itibarıyla ekran, Wi-Fi, mobil internet, arama, iki yönde ses,
+SMS, hoparlör ve titreşim cihazda doğrulandı. Chrome başlatma sorunu gerçek
+`CAP_CHECKPOINT_RESTORE` desteğinin geri taşınmasıyla çözüldü.
+Kısa kararlılık testinde kernel panic, yeniden başlama ve bağlantı kesilmesi
+saptanmadı; uzun süreli RAM ve enerji tüketimi incelemeleri bekliyor.
 
-Chromium tabanlı tarayıcılarda gözlenen native süreç başlatma sorununu,
-KernelSU kancaları bulunmayan bir kernel ile karşılaştırmak. Önceki kayıtlarda
-`zygote-child` SIGABRT ve ardından GPU kanal zaman aşımı görülüyor. KernelSU
-setuid kancası bir hipotezdir; kesin neden veya doğrulanmış düzeltme değildir.
+5G HIDL uyarlaması ve BonusFlaş/ÖSYM için DRM düzeltmesi ROM kullanıcı
+alanına aittir; kernel paketinin içeriği değildir. Kaynak geçmişi ve güncel
+[derleme bağlantıları](../README.md) ana README'de bulunur.
 
-Bu kaynak ağacında KernelSU/ReSukiSU eklenmemiştir. Root gerektiren modüller
-ilk tanı derlemesinde çalışmaz. Telefonda test edilmeden uyumluluk iddiası yoktur.
-İlk GitHub ayar denetimi ve [tam kernel derlemesi](https://github.com/ylmzer/lisa-kernel/actions/runs/37129546878)
-başarılıdır. `3a12e2b7a58f89c0f332f82978ee3de21efc7557` kaynak commit'inden
-`5.4.302-lisa-ylmzer+` Image ve tanı ZIP'i üretildi. İndirilen çıktılarda
-SHA-256, ARM64 Image/ELF biçimi, gerekli ayarlar, son kerneldeki ekran bildirim
-fonksiyonları ve ZIP içindeki Image eşleşmesi doğrulandı.
-Mevcut ROM'un kullandığı `lz4kd` desteği eklendi; dört sayfa sıkıştırma/açma
-testi ve tam derleme geçti. Bunlar cihazda açılış veya Chromium testi değildir. Diğer Xiaomi ekleri
-için [uyumluluk farklarına](compatibility.md) bakın.
+Yeni kernel sürüm metni `5.4.302 HyperOSPro`, TWRP yükleyici adı
+`ylmzer-HyperOSPro` ve ZIP adı `ylmzer-HyperOSPro.zip` olarak ayarlanmıştır.
+Yeni adlandırılan derlemenin çıktısı ve cihaz testi ayrıca doğrulanmalıdır.
+KernelSU/ReSukiSU eklenmemiştir. LZ4KD desteğinin kaynak bilgileri
+[lz4kd-source.md](lz4kd-source.md) içinde kayıtlıdır.
 
 ## GitHub üzerinde derleme
 
-Actions → **Build Lisa diagnostic kernel** → **Run workflow**.
+Actions → **Build ylmzer-HyperOSPro kernel** → **Run workflow**.
 Derleme bu repodaki kaynakları kullanır; başka bir kernel reposunu indirmez.
 Ubuntu 22.04 ve LLVM/Clang 14 ile başlar. Bu, kaynak ağacının eski CFI/LTO
 arayüzüne uygun bir başlangıçtır; Tachyon'un Clang 18 derlemesini taklit etmez.
@@ -53,7 +44,7 @@ Paket sürümleri `build-info.txt` içine kaydedilir.
 İlk çalıştırmada `config-only` seçeneği ayar çözümlemesini doğrular.
 Tam derleme `Image`, DTB'ler, `vmlinux`, `System.map`, `.config`, ayar farkları,
 derleme logu ve SHA-256 listesi üretir. `package` seçilirse ayrıca AnyKernel3
-tanı ZIP'i üretilir. Artifakt üretimi, telefonda çalıştığı anlamına gelmez.
+`ylmzer-HyperOSPro.zip` üretilir. Artifakt üretimi, telefonda çalıştığı anlamına gelmez.
 
 Paket yalnızca `Image` içerir; telefonun mevcut DTB/DTBO ve ramdisk'ini korur.
 Yeni DTB/DTBO dosyaları otomatik flash edilmez. Çalışan kernelde olduğu gibi
