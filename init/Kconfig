@@ -2395,4 +2395,15 @@ config LISA_NETBPFLOAD_COMPAT
 	  It does not provide 5.10 APIs; BPF loading and networking still need
 	  device validation. Other callers retain the actual kernel release.
 
+config LISA_ZYGOTE_DIAG
+	bool "Bounded Lisa native zygote syscall diagnostics"
+	depends on ARM64
+	default n
+	help
+	  Log at most 256 selected native zygote-child syscall numbers and
+	  return values per boot, including errors handled by seccomp/ptrace.
+	  Do not log arguments, change return values or relax any checks.
+	  Use only in a temporary diagnostic build to identify native zygote
+	  initialization failures. This option is not a Chromium fix.
+
 source "init/Kconfig.gki"

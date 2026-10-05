@@ -96,6 +96,9 @@ hotspot work. After installing `dd06b185`, the user confirms two-way call
 audio, including microphone operation. The user also confirms that a web
 page loads over mobile data with Wi-Fi disabled on this candidate.
 
-The user has not seen 5G at the same location with the previous ROM/kernel;
-there is no established 5G regression baseline. Leave 5G unverified until a
-known coverage/SIM baseline can be tested, without speculative modem changes.
+The user subsequently clarified that A16 used 5G successfully on this phone
+with the same SIM, whereas A17 does not. The same SIM also gets 5G in another
+phone at the current location, and the carrier service is active. This provides
+a useful regression baseline. Read-only A16/A17 comparison identified a
+Qualcomm HIDL/AIDL service mismatch; see [5G analysis](five-g-bringup.md).
+A17 5G remains unverified and no 5G fix has been installed.

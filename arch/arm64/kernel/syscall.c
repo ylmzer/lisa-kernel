@@ -6,6 +6,12 @@
 #include <linux/nospec.h>
 #include <linux/ptrace.h>
 #include <linux/syscalls.h>
+#ifdef CONFIG_LISA_ZYGOTE_DIAG
+#include <linux/atomic.h>
+#include <linux/printk.h>
+#include <linux/sched.h>
+#include <linux/string.h>
+#endif
 
 #include <asm/daifflags.h>
 #include <asm/debug-monitors.h>
@@ -36,6 +42,51 @@ static long __invoke_syscall(struct pt_regs *regs, syscall_fn_t syscall_fn)
 	return syscall_fn(regs);
 }
 
+/* Diagnostic only: retain all syscall results and security decisions. */
+#ifdef CONFIG_LISA_ZYGOTE_DIAG
+static atomic_t lisa_zygote_diag_records = ATOMIC_INIT(0);
+
+static void lisa_zygote_syscall_diag(unsigned int scno, long ret)
+{
+	char comm[TASK_COMM_LEN];
+
+	/* The native zygote is AArch64; do not interpret compat syscall IDs. */
+	if (is_compat_task())
+		return;
+
+	switch (scno) {
+	case __NR_prctl:
+	case __NR_capset:
+	case __NR_setresuid:
+	case __NR_setresgid:
+	case __NR_setgroups:
+	case __NR_seccomp:
+	case __NR_sched_setattr:
+	case __NR_sched_setscheduler:
+	case __NR_sched_setparam:
+	case __NR_setrlimit:
+	case __NR_prlimit64:
+		break;
+	default:
+		return;
+	}
+
+	get_task_comm(comm, current);
+	/* Include the terminator: similarly named processes must not match. */
+	if (memcmp(comm, "zygote-child", sizeof("zygote-child")))
+		return;
+
+	/* A hard per-boot quota prevents a restart loop from flooding printk. */
+	if (!atomic_add_unless(&lisa_zygote_diag_records, 1, 256))
+		return;
+
+	pr_info("lisa_zygote_diag: pid=%d syscall=%u result=%ld\n",
+		task_pid_nr(current), scno, ret);
+}
+#else
+static inline void lisa_zygote_syscall_diag(unsigned int scno, long ret) { }
+#endif
+
 static void invoke_syscall(struct pt_regs *regs, unsigned int scno,
 			   unsigned int sc_nr,
 			   const syscall_fn_t syscall_table[])
@@ -50,6 +101,7 @@ static void invoke_syscall(struct pt_regs *regs, unsigned int scno,
 		ret = do_ni_syscall(regs, scno);
 	}
 
+	lisa_zygote_syscall_diag(scno, ret);
 	syscall_set_return_value(current, regs, 0, ret);
 }
 
@@ -107,8 +159,11 @@ static void el0_svc_common(struct pt_regs *regs, int scno, int sc_nr,
 		if (scno == NO_SYSCALL)
 			syscall_set_return_value(current, regs, -ENOSYS, 0);
 		scno = syscall_trace_enter(regs);
-		if (scno == NO_SYSCALL)
+		if (scno == NO_SYSCALL) {
+			lisa_zygote_syscall_diag(regs->syscallno,
+				syscall_get_return_value(current, regs));
 			goto trace_exit;
+		}
 	}
 
 	invoke_syscall(regs, scno, sc_nr, syscall_table);

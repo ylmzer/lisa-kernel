@@ -15,6 +15,10 @@ on:
         description: Enable bounded boot logging to lisa's dedicated oops partition
         type: boolean
         default: false
+      zygote_diag:
+        description: Log bounded native zygote initialization syscalls (diagnosis only)
+        type: boolean
+        default: false
 permissions:
   contents: read
 defaults:
@@ -54,6 +58,8 @@ jobs:
         run: python3 .lisa/tests/test_bootlog_decode.py
       - name: Verify netbpfload uname compatibility boundaries
         run: python3 .lisa/tests/test_netbpfload_compat.py
+      - name: Verify native zygote diagnostic scope and hard quota
+        run: python3 .lisa/tests/test_zygote_diag.py
       - name: Verify MIUI display ABI and asynchronous payload ownership
         run: python3 .lisa/tests/test_mi_display.py | tee dist/lisa/mi-display-test.txt
       - name: Verify built-in WLAN HAL startup and load failure handling
@@ -65,17 +71,20 @@ jobs:
         env:
           USE_CCACHE: '1'
           BOOT_LOG: '1'
+          ZYGOTE_DIAG: ${{ inputs.zygote_diag && '1' || '0' }}
         run: bash .lisa/build.sh bootlog-only
       - name: Compile and verify built-in vendor drivers
         if: inputs.mode == 'build'
         env:
           USE_CCACHE: '1'
           BOOT_LOG: ${{ inputs.boot_log && '1' || '0' }}
+          ZYGOTE_DIAG: ${{ inputs.zygote_diag && '1' || '0' }}
         run: bash .lisa/build.sh vendor-only
       - name: Configure and build
         env:
           USE_CCACHE: '1'
           BOOT_LOG: ${{ inputs.boot_log && '1' || '0' }}
+          ZYGOTE_DIAG: ${{ inputs.zygote_diag && '1' || '0' }}
         run: bash .lisa/build.sh '${{ inputs.mode }}'
       - name: Checkout pinned AnyKernel3 installer
         if: inputs.mode == 'build' && inputs.package
@@ -88,6 +97,7 @@ jobs:
         if: inputs.mode == 'build' && inputs.package
         env:
           BOOT_LOG: ${{ inputs.boot_log && '1' || '0' }}
+          ZYGOTE_DIAG: ${{ inputs.zygote_diag && '1' || '0' }}
         run: |
           cp .lisa/anykernel.sh out/anykernel/anykernel.sh
           if [ '${{ inputs.boot_log }}' = true ]; then

@@ -45,6 +45,7 @@ ARGS=(O="$OUT" ARCH=arm64 TARGET_PRODUCT=lisa LLVM=1 LLVM_IAS=1
   echo "mode=$MODE"
   echo "root_support=none"
   echo "boot_log=${BOOT_LOG:-0}"
+  echo "zygote_diag=${ZYGOTE_DIAG:-0}"
   echo "build_timestamp=$KBUILD_BUILD_TIMESTAMP"
   "clang${LLVM_SUFFIX}" --version
   "ld.lld${LLVM_SUFFIX}" --version
@@ -60,6 +61,11 @@ if [ "${BOOT_LOG:-0}" = 1 ]; then
 else
   scripts/config --file "$OUT/.config" -d LISA_BOOTLOG
 fi
+if [ "${ZYGOTE_DIAG:-0}" = 1 ]; then
+  scripts/config --file "$OUT/.config" -e LISA_ZYGOTE_DIAG
+else
+  scripts/config --file "$OUT/.config" -d LISA_ZYGOTE_DIAG
+fi
 cp "$OUT/.config" "$DIST/requested.config"
 make "${ARGS[@]}" olddefconfig 2>&1 | tee "$DIST/config.log"
 cp "$OUT/.config" "$DIST/resolved.config"
@@ -74,7 +80,7 @@ if [ "$MODE" = config-only ]; then
 fi
 if [ "$MODE" = bootlog-only ]; then
   grep -qx 'CONFIG_LISA_BOOTLOG=y' "$OUT/.config"
-  make -j"${JOBS:-$(nproc)}" "${ARGS[@]}" drivers/misc/lisa_bootlog.o kernel/sys.o \
+  make -j"${JOBS:-$(nproc)}" "${ARGS[@]}" drivers/misc/lisa_bootlog.o kernel/sys.o arch/arm64/kernel/syscall.o \
     2>&1 | tee "$DIST/bootlog-build.log"
   echo 'Diagnostic recorder compiled; runtime recording still requires device testing.'
   exit 0
@@ -112,6 +118,10 @@ for symbol in wlan_hdd_state_fops rmnet_link_ops rmnet_ctl_register_client \
     echo "Missing linked device provider: $symbol" >&2; exit 1;
   }
 done
+if [ "${ZYGOTE_DIAG:-0}" = 1 ]; then
+  grep -qx 'CONFIG_LISA_ZYGOTE_DIAG=y' "$DIST/resolved.config"
+  grep -aFq 'lisa_zygote_diag: pid=%d syscall=%u result=%ld' "$DIST/Image"
+fi
 if [ -f "$OUT/Module.symvers" ]; then cp "$OUT/Module.symvers" "$DIST/"; fi
 tar -czf "$DIST/dtbs.tar.gz" -C "$OUT/arch/arm64/boot" dts
 (cd "$DIST" && sha256sum Image vmlinux System.map resolved.config dtbs.tar.gz > SHA256SUMS)
