@@ -73,6 +73,16 @@
 #include <asm/cacheflush.h>
 
 #include "binder_internal.h"
+#ifdef CONFIG_LISA_MILLET
+#include "../misc/millet/uapi/millet.h"
+#include "../misc/millet/binder_oem.h"
+static struct oem_binder_hook millet_binder_hooks;
+void oem_register_binder_hook(struct oem_binder_hook *hooks)
+{
+ millet_binder_hooks = *hooks;
+}
+#endif
+
 #include "binder_trace.h"
 #include <trace/hooks/binder.h>
 
@@ -3278,6 +3288,20 @@ static void binder_transaction(struct binder_proc *proc,
 	t->code = tr->code;
 	t->flags = tr->flags;
 	t->is_nested = is_nested;
+#ifdef CONFIG_LISA_MILLET
+ if (target_proc->tsk && proc->tsk) {
+  type_binder_send_hook notify = reply ? millet_binder_hooks.oem_reply_hook :
+                                      millet_binder_hooks.oem_trans_hook;
+  if (notify)
+   notify(target_proc->tsk, proc->tsk, thread->pid,
+          !!(tr->flags & TF_ONE_WAY), tr->code);
+  if ((tr->flags & TF_ONE_WAY) && millet_binder_hooks.oem_buf_overflow_hook &&
+      binder_alloc_get_free_async_space(&target_proc->alloc) < (1U << 17))
+   millet_binder_hooks.oem_buf_overflow_hook(target_proc->tsk, proc->tsk,
+                       thread->pid, true, tr->code);
+ }
+#endif
+
 	if (!(t->flags & TF_ONE_WAY) &&
 	    binder_supported_policy(current->policy)) {
 		/* Inherit supported policies for synchronous transactions */
@@ -4540,6 +4564,35 @@ static int binder_put_node_cmd(struct binder_proc *proc,
 	return 0;
 }
 
+#ifdef CONFIG_LISA_MILLET
+/* The proc mutex owns list lifetime; each inner lock owns work/stack state. */
+void query_binder_app_stat(int uid)
+{
+ struct binder_proc *proc;
+ enum BINDER_STAT status = BINDER_IN_IDLE;
+ if (!millet_binder_hooks.oem_query_st_hook || uid < 10000)
+  return;
+ mutex_lock(&binder_procs_lock);
+ hlist_for_each_entry(proc, &binder_procs, proc_node) {
+  struct rb_node *node;
+  if (!proc->tsk || task_uid(proc->tsk).val != uid)
+   continue;
+  binder_inner_proc_lock(proc);
+  if (!list_empty(&proc->todo))
+   status = BINDER_IN_BUSY;
+  for (node = rb_first(&proc->threads); node && status == BINDER_IN_IDLE;
+       node = rb_next(node)) {
+   struct binder_thread *thread = rb_entry(node, struct binder_thread, rb_node);
+   if (!list_empty(&thread->todo) || thread->transaction_stack)
+    status = BINDER_IN_BUSY;
+  }
+  binder_inner_proc_unlock(proc);
+ }
+ mutex_unlock(&binder_procs_lock);
+ millet_binder_hooks.oem_query_st_hook(uid, current, 0, current->pid, status);
+}
+#endif
+
 static int binder_wait_for_work(struct binder_thread *thread,
 				bool do_proc_work)
 {
@@ -4547,6 +4600,26 @@ static int binder_wait_for_work(struct binder_thread *thread,
 	struct binder_proc *proc = thread->proc;
 	int ret = 0;
 
+#ifdef CONFIG_LISA_MILLET
+ if (millet_binder_hooks.oem_wait4_hook && thread->transaction_stack) {
+  struct binder_transaction *txn = thread->transaction_stack;
+  struct task_struct *dst = NULL;
+  u32 code, flags;
+  spin_lock(&txn->lock);
+  code = txn->code;
+  flags = txn->flags;
+  if (txn->to_proc && txn->to_proc->tsk) {
+   dst = txn->to_proc->tsk;
+   get_task_struct(dst);
+  }
+  spin_unlock(&txn->lock);
+  if (dst) {
+   millet_binder_hooks.oem_wait4_hook(dst, proc->tsk, thread->pid,
+                                  !!(flags & TF_ONE_WAY), code);
+   put_task_struct(dst);
+  }
+ }
+#endif
 	freezer_do_not_count();
 	binder_inner_proc_lock(proc);
 	for (;;) {

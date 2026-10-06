@@ -55,7 +55,7 @@ ARGS=(O="$OUT" ARCH=arm64 TARGET_PRODUCT=lisa LLVM=1 LLVM_IAS=1
 } > "$DIST/build-info.txt"
 cp .lisa/configs/tachyon-reference.config "$OUT/.config"
 scripts/config --file "$OUT/.config" --set-str LOCALVERSION "-HyperOSPro" \
-  -d LOCALVERSION_AUTO -d KSU -d MODULE_FORCE_LOAD -e LISA_NETBPFLOAD_COMPAT \
+  -e LISA_MILLET -d LOCALVERSION_AUTO -d KSU -d MODULE_FORCE_LOAD -e LISA_NETBPFLOAD_COMPAT \
   -d RMNET -e RMNET_CORE -e RMNET_CTL -d I2C_RTC6226_QCA
 if [ "${BOOT_LOG:-0}" = 1 ]; then
   scripts/config --file "$OUT/.config" -e LISA_BOOTLOG
@@ -91,6 +91,8 @@ if [ "$MODE" = bootlog-only ]; then
   echo 'Diagnostic recorder compiled; runtime recording still requires device testing.'
   exit 0
 fi
+make -j"${JOBS:-$(nproc)}" "${ARGS[@]}" drivers/misc/millet/ drivers/android/binder.o \
+  2>&1 | tee "$DIST/millet-build.log"
 make -k -j"${JOBS:-$(nproc)}" "${ARGS[@]}" \
   techpack/display/ techpack/audio/ techpack/camera/ techpack/datarmnet/ \
   2>&1 | tee "$DIST/vendor-build.log"

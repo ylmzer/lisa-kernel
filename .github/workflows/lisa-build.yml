@@ -60,6 +60,8 @@ jobs:
         run: python3 .lisa/tests/test_netbpfload_compat.py
       - name: Verify checkpoint capability and namespace permission boundaries
         run: python3 .lisa/tests/test_checkpoint_capability.py | tee dist/lisa/checkpoint-capability-test.txt
+      - name: Verify Millet ABI and untrusted netlink rejection
+        run: python3 .lisa/tests/test_millet.py | tee dist/lisa/millet-test.txt
       - name: Verify native zygote diagnostic scope and hard quota
         run: python3 .lisa/tests/test_zygote_diag.py
       - name: Verify MIUI display ABI and asynchronous payload ownership

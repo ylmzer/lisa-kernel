@@ -565,4 +565,13 @@ config LISA_BOOTLOG
 	  Four boots are retained so recovery does not erase the preceding failure.
 	  This is diagnostic instrumentation, not an Android boot compatibility fix.
 
+config LISA_MILLET
+ bool "Lisa HyperOS Millet event transport"
+ depends on ARM64 && ANDROID_BINDER_IPC && NET && NETFILTER && IPV6 && FREEZER && TRACEPOINTS
+ default n
+ help
+   Built-in Xiaomi Millet event transport on netlink protocol 31 for the
+   installed HyperOS userspace. Reports signal, Binder and watched UID TCP
+   events; does not freeze tasks or alter packet/Binder return values.
+
 endmenu
