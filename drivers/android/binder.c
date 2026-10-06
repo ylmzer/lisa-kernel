@@ -4601,18 +4601,22 @@ static int binder_wait_for_work(struct binder_thread *thread,
 	int ret = 0;
 
 #ifdef CONFIG_LISA_MILLET
- if (millet_binder_hooks.oem_wait4_hook && thread->transaction_stack) {
-  struct binder_transaction *txn = thread->transaction_stack;
+ if (millet_binder_hooks.oem_wait4_hook) {
   struct task_struct *dst = NULL;
-  u32 code, flags;
-  spin_lock(&txn->lock);
-  code = txn->code;
-  flags = txn->flags;
-  if (txn->to_proc && txn->to_proc->tsk) {
-   dst = txn->to_proc->tsk;
-   get_task_struct(dst);
+  u32 code = 0, flags = 0;
+  binder_inner_proc_lock(proc);
+  if (thread->transaction_stack) {
+   struct binder_transaction *txn = thread->transaction_stack;
+   spin_lock(&txn->lock);
+   code = txn->code;
+   flags = txn->flags;
+   if (txn->to_proc && txn->to_proc->tsk) {
+    dst = txn->to_proc->tsk;
+    get_task_struct(dst);
+   }
+   spin_unlock(&txn->lock);
   }
-  spin_unlock(&txn->lock);
+  binder_inner_proc_unlock(proc);
   if (dst) {
    millet_binder_hooks.oem_wait4_hook(dst, proc->tsk, thread->pid,
                                   !!(flags & TF_ONE_WAY), code);
