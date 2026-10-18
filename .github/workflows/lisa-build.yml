@@ -114,7 +114,7 @@ jobs:
           import hashlib
           from datetime import datetime, timedelta, timezone
           root = Path('out/anykernel')
-          stamp = datetime.now(timezone(timedelta(hours=3))).strftime('%Y-%m-%d_%H-%M')
+          stamp = datetime.now(timezone(timedelta(hours=3))).strftime('%d-%m-%Y-%H-%M')
           package_name = f'ylmzer-HyperOSPro-{stamp}.zip'
           package_path = Path('dist/lisa') / package_name
           with zipfile.ZipFile(package_path, 'w', zipfile.ZIP_DEFLATED) as archive:
