@@ -111,9 +111,13 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import zipfile
+          import hashlib
+          from datetime import datetime, timedelta, timezone
           root = Path('out/anykernel')
-          package_name = 'ylmzer-HyperOSPro.zip'
-          with zipfile.ZipFile('dist/lisa/' + package_name, 'w', zipfile.ZIP_DEFLATED) as archive:
+          stamp = datetime.now(timezone(timedelta(hours=3))).strftime('%Y-%m-%d_%H-%M')
+          package_name = f'ylmzer-HyperOSPro-{stamp}.zip'
+          package_path = Path('dist/lisa') / package_name
+          with zipfile.ZipFile(package_path, 'w', zipfile.ZIP_DEFLATED) as archive:
               for path in sorted(root.rglob('*')):
                   relative = path.relative_to(root)
                   if not path.is_file() or any(part.startswith('.') for part in relative.parts):
@@ -121,9 +125,9 @@ jobs:
                   if path.name == 'README.md' or 'placeholder' in path.name:
                       continue
                   archive.write(path, relative.as_posix())
+          with (package_path.parent / 'SHA256SUMS').open('a', encoding='utf-8') as checksums:
+              checksums.write(f"{hashlib.sha256(package_path.read_bytes()).hexdigest()}  {package_name}\n")
           PY
-          cd dist/lisa
-          sha256sum ylmzer-HyperOSPro.zip >> SHA256SUMS
       - name: Record compiler cache statistics
         if: always() && inputs.mode == 'build'
         run: |
