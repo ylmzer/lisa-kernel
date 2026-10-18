@@ -5,7 +5,7 @@ on:
       mode:
         description: Configuration audit or full kernel build
         type: choice
-        options: [config-only, build]
+        options: [config-only, zram-only, build]
         default: config-only
       package:
         description: Produce the ylmzer-HyperOSPro AnyKernel3 ZIP (full build only)
