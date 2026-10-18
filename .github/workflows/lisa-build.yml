@@ -54,6 +54,11 @@ jobs:
             .lisa/tests/lz4kd_roundtrip.c lib/lz4kd/lz4kd_encode.c lib/lz4kd/lz4kd_decode.c \
             -o out/tests/lz4kd-roundtrip
           out/tests/lz4kd-roundtrip | tee dist/lisa/codec-test.txt
+      - name: Verify Lisa ExtM age and writeback request boundaries
+        run: |
+          gcc -std=gnu11 -O2 -g -Wall -Wextra -Werror -fsanitize=address,undefined \
+            .lisa/tests/lisa_extm_test.c -o out/tests/lisa-extm
+          out/tests/lisa-extm | tee dist/lisa/extm-test.txt
       - name: Verify boot-log recovery and corruption handling
         run: python3 .lisa/tests/test_bootlog_decode.py
       - name: Verify netbpfload uname compatibility boundaries

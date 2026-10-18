@@ -55,7 +55,7 @@ ARGS=(O="$OUT" ARCH=arm64 TARGET_PRODUCT=lisa LLVM=1 LLVM_IAS=1
 } > "$DIST/build-info.txt"
 cp .lisa/configs/tachyon-reference.config "$OUT/.config"
 scripts/config --file "$OUT/.config" --set-str LOCALVERSION "-HyperOSPro" \
-  -e LISA_MILLET -e ZRAM_WRITEBACK -d LOCALVERSION_AUTO -d KSU -d MODULE_FORCE_LOAD -e LISA_NETBPFLOAD_COMPAT \
+  -e LISA_MILLET -e ZRAM_WRITEBACK -e ZRAM_MIUI_EXTM -d LOCALVERSION_AUTO -d KSU -d MODULE_FORCE_LOAD -e LISA_NETBPFLOAD_COMPAT \
   -d RMNET -e RMNET_CORE -e RMNET_CTL -d I2C_RTC6226_QCA
 if [ "${BOOT_LOG:-0}" = 1 ]; then
   scripts/config --file "$OUT/.config" -e LISA_BOOTLOG
@@ -88,7 +88,7 @@ if [ "$MODE" = zram-only ]; then
   make -j"${JOBS:-$(nproc)}" "${ARGS[@]}" drivers/block/zram/ mm/zsmalloc.o \
     2>&1 | tee "$DIST/zram-build.log"
   "$LLVM_NM" --defined-only "$OUT/drivers/block/zram/zram_drv.o" > "$DIST/zram-symbols.txt"
-  for symbol in backing_dev_store writeback_store writeback_limit_store; do
+  for symbol in backing_dev_store writeback_store writeback_limit_store idle_stat_show new_stat_show new_store; do
     grep -Eq "[[:space:]]${symbol}(\.[[:xdigit:]]{32})?$" "$DIST/zram-symbols.txt" || {
       echo "Missing compiled ZRAM writeback provider: $symbol" >&2; exit 1;
     }
