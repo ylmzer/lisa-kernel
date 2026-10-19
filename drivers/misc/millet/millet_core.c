@@ -227,6 +227,8 @@ static void recv_handler(struct sk_buff *skb)
  payload = nlmsg_data(nlh);
  if (!millet_payload_valid(payload))
   return;
+ if (!millet_sender_valid(from, nlh->nlmsg_pid, payload))
+  return;
 	switch (payload->msg_type) {
 	case LOOPBACK_MSG: {
 		struct millet_data data = {0};

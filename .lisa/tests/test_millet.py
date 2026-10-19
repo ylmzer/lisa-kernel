@@ -26,7 +26,23 @@ int main(void) {
  assert(!millet_frame_valid(0,96,97,1234,1234));
  assert(!millet_frame_valid(0,96,95,1234,1234));
  assert(!millet_frame_valid(0,96,96,0,0));
- assert(!millet_frame_valid(0,96,96,1234,1235));
+ assert(!millet_frame_valid(0,96,96,1234,0));
+ assert(millet_sender_valid(1234,1234,&p));
+ assert(!millet_sender_valid(1234,1235,&p)); /* no offset registration */
+ p.msg_type=MSG_TO_KERN;
+ for(int i=1;i<7;i++) {
+  p.owner=i;
+  assert(millet_sender_valid(1234,1234,&p));
+  assert(millet_sender_valid(1234,1234+i,&p)); /* shared JNI socket */
+  assert(!millet_sender_valid(1234,1234+i+1,&p));
+  assert(!millet_sender_valid(1234,1233,&p));
+  assert(!millet_sender_valid(UINT32_MAX-2,3,&p));
+ }
+ p.owner=HANDSHK_TYPE;
+ assert(millet_sender_valid(2263,2269,&p)); /* real ROM nLoopOnce */
+ assert(!millet_frame_valid(2000,96,96,2263,2269));
+ p.owner=7;assert(!millet_sender_valid(1234,1241,&p));
+ p.owner=SIG_TYPE;p.msg_type=LOOPBACK_MSG;
  p.src_port++;assert(!millet_payload_valid(&p));p.src_port--;
  p.dst_port++;assert(!millet_payload_valid(&p));p.dst_port--;
  for(int i=-16;i<32;i++) {p.owner=i;assert(millet_payload_valid(&p)==(i>0&&i<7));}

@@ -46,3 +46,23 @@ Compilation and host rejection tests are required before packaging. Device
 handshake, real event callbacks, service stability, notifications/calls and
 RAM/energy comparison remain required after manual installation. Adding
 the transport alone is not evidence that the RAM warning is resolved.
+
+## Shared JNI sender port compatibility (2026-10-19)
+
+The HyperOS `libmiui_service.so` nLoopOnce JNI entry (0x12e14) uses
+`create_millet_sock`, which binds the shared socket to PID (type zero).
+It then calls `millet_sendmsg` with HANDSHK_TYPE=6. In libmillet_comm.so,
+create_millet_sock at 0x4158 passes zero to create_millet_sock_type, while
+millet_sendmsg at 0x4230 writes getpid()+type into nlmsg_pid. The real
+system_server socket is port 2263, so this command claims 2269.
+The previous exact header/sender equality rejected this legitimate command,
+including all shared-socket package and Binder queries.
+
+Accept only the observed positive owner offset for MSG_TO_KERN from the
+already restricted root/system credentials, after length, magic and enum
+validation. LOOPBACK registration still requires exact equality. Neither
+registration nor replies use nlmsg_pid as an authority; they use the actual
+NETLINK_CB port. Tests cover all six offsets, offset registration rejection,
+wrong offsets, unsigned wraparound, invalid owners and shell credentials.
+This does not enable Greezer policy, advertise unsupported capabilities or
+alter SELinux. Runtime monitor registration still requires device testing.
