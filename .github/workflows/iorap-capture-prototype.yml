@@ -1,0 +1,59 @@
+name: Validate experimental iorap capture foundation
+on:
+  push:
+    branches: [codex/iorap-capture-20261020]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  capture-only:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Install established kernel compiler dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc bison flex make gcc g++ libssl-dev libelf-dev \
+            libncurses-dev python3 rsync zip clang-14 lld-14 llvm-14 \
+            gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi
+      - name: Capture core boundaries under ASAN and UBSAN
+        run: |
+          mkdir -p dist/iorap
+          gcc -std=gnu11 -O1 -g -Wall -Wextra -Werror -pthread \
+            -fsanitize=address,undefined .lisa/tests/lisa_iorap_capture_test.c \
+            -o /tmp/lisa-iorap-capture-test
+          /tmp/lisa-iorap-capture-test | tee dist/iorap/core-test.txt
+      - name: Configure existing Lisa baseline
+        run: bash .lisa/build.sh config-only
+      - name: Compile enabled and disabled capture paths without building an image
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp out/lisa/.config dist/iorap/baseline.config
+          args=(O=out/lisa ARCH=arm64 TARGET_PRODUCT=lisa LLVM=1 LLVM_IAS=1
+            CC=clang-14 LD=ld.lld-14 AR=llvm-ar-14 NM=llvm-nm-14 LLVM_NM=llvm-nm-14
+            OBJCOPY=llvm-objcopy-14 OBJDUMP=llvm-objdump-14 STRIP=llvm-strip-14
+            READELF=llvm-readelf-14 HOSTCC=clang-14 HOSTCXX=clang++-14
+            CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_COMPAT=arm-linux-gnueabi-)
+          scripts/config --file out/lisa/.config -e LISA_IORAP_CAPTURE
+          make "${args[@]}" olddefconfig
+          grep -qx 'CONFIG_LISA_IORAP_CAPTURE=y' out/lisa/.config
+          cp out/lisa/.config dist/iorap/enabled.config
+          make -j2 "${args[@]}" mm/lisa_iorap_capture.o mm/filemap.o 2>&1 | tee dist/iorap/enabled-compile.txt
+          llvm-nm-14 --defined-only out/lisa/mm/lisa_iorap_capture.o > dist/iorap/capture-symbols.txt
+          grep -q lisa_iorap_capture_page dist/iorap/capture-symbols.txt
+          scripts/config --file out/lisa/.config -d LISA_IORAP_CAPTURE
+          make "${args[@]}" olddefconfig
+          make -j2 "${args[@]}" mm/filemap.o 2>&1 | tee dist/iorap/disabled-compile.txt
+          cp out/lisa/.config dist/iorap/disabled.config
+          printf 'Capture-only prototype: no miscdevice, ABI, Image, ZIP or device acceptance.\n' > dist/iorap/LIMITATIONS.txt
+      - name: Upload diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: iorap-capture-prototype-${{ github.run_id }}
+          path: |
+            dist/iorap
+            dist/lisa/config.log
+          retention-days: 7

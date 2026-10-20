@@ -859,3 +859,12 @@ config MULTIPLE_KSWAPD
 	 (echo <num> > /proc/sys/vm/kswapd_threads)
 
 	 Values not in the range of 1..16 are ignored.
+
+config LISA_IORAP_CAPTURE
+	bool "Experimental Lisa iorap page capture foundation"
+	depends on ARM64 && ARM64_4K_PAGES
+	default n
+	help
+	  Internal bounded file/page capture preparation. No Xiaomi device ABI,
+	  automatic start, prefetch interface, or installable feature is provided.
+	  Keep disabled outside the dedicated compile and capture tests.

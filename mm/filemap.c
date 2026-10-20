@@ -14,6 +14,7 @@
 #include <linux/compiler.h>
 #include <linux/dax.h>
 #include <linux/fs.h>
+#include <linux/lisa_iorap_capture.h>
 #include <linux/sched/signal.h>
 #include <linux/uaccess.h>
 #include <linux/capability.h>
@@ -2315,6 +2316,8 @@ page_ok:
 		 */
 
 		ret = copy_page_to_iter(page, offset, nr, iter);
+		if (ret)
+			lisa_iorap_capture_page(filp, index);
 		offset += ret;
 		index += offset >> PAGE_SHIFT;
 		offset &= ~PAGE_MASK;
@@ -2729,6 +2732,7 @@ retry_find:
 		return VM_FAULT_SIGBUS;
 	}
 
+	lisa_iorap_capture_page(file, offset);
 	vmf->page = page;
 	return ret | VM_FAULT_LOCKED;
 
@@ -2834,6 +2838,7 @@ void filemap_map_pages(struct vm_fault *vmf,
 
 		if (alloc_set_pte(vmf, NULL, page))
 			goto unlock;
+		lisa_iorap_capture_page(file, xas.xa_index);
 		unlock_page(page);
 		goto next;
 unlock:
