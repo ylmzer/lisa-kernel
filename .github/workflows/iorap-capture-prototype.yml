@@ -8,6 +8,10 @@ on:
         description: Build the diagnostic Image and AnyKernel ZIP after narrow checks
         type: boolean
         default: false
+      build_integration:
+        description: Explicitly include the gated ROM-specific legacy and PTE transport
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -83,6 +87,7 @@ jobs:
     timeout-minutes: 180
     env:
       IORAP_TEST: '1'
+      IORAP_INTEGRATION: ${{ inputs.build_integration && '1' || '0' }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - name: Install established toolchain
@@ -98,6 +103,12 @@ jobs:
           grep -qx 'CONFIG_LISA_IORAP_TEST=y' dist/lisa/resolved.config
           grep -qx 'CONFIG_LISA_IORAP_CAPTURE=y' dist/lisa/resolved.config
           grep -q 'lisa_iorap_test_init' dist/lisa/System.map
+          if [ "$IORAP_INTEGRATION" = 1 ]; then
+            grep -qx 'CONFIG_LISA_IORAP_LEGACY=y' dist/lisa/resolved.config
+            grep -qx 'CONFIG_LISA_IORAP_ROM_PTE=y' dist/lisa/resolved.config
+            grep -q 'legacy_ioctl' dist/lisa/System.map
+            grep -q 'lisa_iorap_anon_willneed' dist/lisa/System.map
+          fi
           aarch64-linux-gnu-gcc -static -std=gnu11 -O2 -Wall -Wextra -Werror \
             .lisa/tests/lisa_iorap_device_test.c -o dist/lisa/lisa-iorap-test-arm64
           aarch64-linux-gnu-readelf -h dist/lisa/lisa-iorap-test-arm64 > dist/lisa/test-tool-elf.txt

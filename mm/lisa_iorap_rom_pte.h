@@ -99,6 +99,7 @@ static int pte_walk_pmd(pmd_t *pmd, unsigned long start, unsigned long end,
 	struct iorap_pte_walk *ctx = walk->private;
 	struct iorap_pte_plan *plan = ctx->plan;
 	struct iorap_pte_chunk *chunk;
+	struct iorap_pte_chunk scratch;
 	struct vm_area_struct *vma = walk->vma;
 	unsigned long addr, n;
 	spinlock_t *ptl;
@@ -109,9 +110,8 @@ static int pte_walk_pmd(pmd_t *pmd, unsigned long start, unsigned long end,
 		return -ETIMEDOUT;
 	if (pmd_none(*pmd))
 		return 0;
-	if (plan->count == IORAP_PTE_CHUNKS)
-		return -ENOSPC;
-	chunk = &plan->chunks[plan->count];
+	chunk = plan->count < IORAP_PTE_CHUNKS ?
+		&plan->chunks[plan->count] : &scratch;
 	chunk->base = start & PMD_MASK;
 	chunk->vma_start = vma->vm_start;
 	chunk->vma_end = vma->vm_end;
@@ -144,6 +144,8 @@ static int pte_walk_pmd(pmd_t *pmd, unsigned long start, unsigned long end,
 	if (n > IORAP_PTE_PAGES - plan->pages)
 		return -E2BIG;
 	if (n) {
+		if (plan->count == IORAP_PTE_CHUNKS)
+			return -ENOSPC;
 		if (WARN_ON(!chunk->anon))
 			return -ESTALE;
 		get_anon_vma(chunk->anon);

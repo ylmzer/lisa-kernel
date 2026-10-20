@@ -32,6 +32,8 @@
 #define IS_ERR(p) ((uintptr_t)(p)>=(uintptr_t)-4095)
 #define cpu_to_le64(x) htole64(x)
 #define time_before(a,b) ((long)((a)-(b))<0)
+#define READ_ONCE(x) (x)
+#define WRITE_ONCE(x,v) ((x)=(v))
 typedef _Atomic int atomic_t;
 static atomic_t capture_transport_owner;
 static unsigned long jiffies=1;
@@ -113,10 +115,15 @@ static long call(unsigned int nr,void *data)
 int main(void)
 {
  unsigned char input[280],size_query[280],small[280];unsigned char *info;
- unsigned int i;unsigned long bytes;int slot;
+ unsigned int i,enabled;unsigned long bytes;int slot;
  assert(!lisa_iorap_legacy_init());assert(!legacy_open(NULL,NULL));
  request(input,10001,4455);euid=2000;assert(call(1,input)==-EPERM);
  euid=0;capability=0;assert(call(1,input)==-EPERM);
+ euid=1000;assert(legacy_open(NULL,NULL)==-EAGAIN);
+ enabled=1;assert(legacy_ioctl(NULL,LISA_IORAP_NATIVE_SWITCH,(unsigned long)&enabled)==-EPERM);
+ euid=0;capability=1;enabled=2;
+ assert(legacy_ioctl(NULL,LISA_IORAP_NATIVE_SWITCH,(unsigned long)&enabled)==-EINVAL);
+ enabled=1;assert(!legacy_ioctl(NULL,LISA_IORAP_NATIVE_SWITCH,(unsigned long)&enabled));
  euid=1000;assert(!legacy_open(NULL,NULL));namespace_other=1;
  assert(call(1,input)==-EPERM);namespace_other=0;euid=0;capability=1;
  fail_copy=1;assert(call(1,input)==-EFAULT);fail_copy=0;

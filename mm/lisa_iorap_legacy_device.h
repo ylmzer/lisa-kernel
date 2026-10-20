@@ -22,6 +22,11 @@ static DEFINE_MUTEX(legacy_control);
 static struct lisa_iorap_legacy_request legacy_active;
 static struct lisa_iorap_legacy_cache legacy_cache[LISA_IORAP_LEGACY_SLOTS];
 static unsigned long legacy_cache_bytes;
+/* Private test-stage switch. A system daemon cannot enable itself before
+ * root/CAP_SYS_ADMIN validation of the new driver has completed.
+ */
+#define LISA_IORAP_NATIVE_SWITCH 0x40044cfeU
+static bool legacy_native_enabled;
 
 static bool legacy_allowed(void)
 {
@@ -37,7 +42,11 @@ static bool legacy_allowed(void)
 #include "lisa_iorap_rom_pte.h"
 static int legacy_open(struct inode *inode, struct file *file)
 {
-	return legacy_allowed() ? nonseekable_open(inode, file) : -EPERM;
+	if (!legacy_allowed())
+		return -EPERM;
+	if (__kuid_val(current_euid()) == 1000 && !READ_ONCE(legacy_native_enabled))
+		return -EAGAIN;
+	return nonseekable_open(inode, file);
 }
 static void legacy_evict(unsigned int i)
 {
@@ -182,6 +191,22 @@ static long legacy_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	(void)file;
 	if (!legacy_allowed())
 		return -EPERM;
+	if (cmd == LISA_IORAP_NATIVE_SWITCH) {
+		unsigned int enabled;
+		if (!uid_eq(current_euid(), GLOBAL_ROOT_UID) ||
+		    !ns_capable(&init_user_ns, CAP_SYS_ADMIN))
+			return -EPERM;
+		if (copy_from_user(&enabled, user, sizeof(enabled)))
+			return -EFAULT;
+		if (enabled > 1)
+			return -EINVAL;
+		mutex_lock(&legacy_control);
+		WRITE_ONCE(legacy_native_enabled, enabled != 0);
+		mutex_unlock(&legacy_control);
+		return 0;
+	}
+	if (__kuid_val(current_euid()) == 1000 && !READ_ONCE(legacy_native_enabled))
+		return -EAGAIN;
 	op = lisa_iorap_legacy_operation(cmd);
 	/* Names/debug/PTE are not silently emulated. The current real daemon
 	 * only consumes size/info. Version ENOTTY selects its actual v2 path.
