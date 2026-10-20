@@ -12,6 +12,8 @@ struct lisa_iorap_bitmap_snapshot;
 void lisa_iorap_capture_page(struct file *file, pgoff_t index);
 /* Process context only. Internal preparation API; no userspace device exists. */
 int lisa_iorap_capture_begin(kuid_t uid);
+/* Discards events without allocating; future endpoint release must call this. */
+int lisa_iorap_capture_abort(void);
 struct lisa_iorap_snapshot *lisa_iorap_capture_end(void);
 void lisa_iorap_snapshot_put(struct lisa_iorap_snapshot *snapshot);
 /* Leaves the raw snapshot owned by caller, on both success and failure. */

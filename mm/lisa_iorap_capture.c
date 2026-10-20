@@ -11,6 +11,8 @@
 #include <linux/fs.h>
 #include <linux/interrupt.h>
 #include <linux/jump_label.h>
+#include <linux/jiffies.h>
+#include <linux/workqueue.h>
 #include <linux/lisa_iorap_capture.h>
 #include <linux/mm.h>
 #include <linux/mutex.h>
@@ -55,6 +57,9 @@ struct lisa_iorap_snapshot {
 static DEFINE_MUTEX(capture_control);
 static DEFINE_SPINLOCK(capture_lock);
 static DEFINE_STATIC_KEY_FALSE(capture_enabled);
+static unsigned long capture_deadline;
+static void capture_timeout(struct work_struct *work);
+static DECLARE_DELAYED_WORK(capture_timeout_work, capture_timeout);
 static struct lisa_iorap_event capture_events[LISA_IORAP_MAX_EVENTS];
 static struct lisa_iorap_capture_state capture = {
 	.events = capture_events,
@@ -80,6 +85,58 @@ void lisa_iorap_capture_page(struct file *file, pgoff_t index)
 	spin_unlock_irqrestore(&capture_lock, flags);
 }
 
+/* capture_control held; no allocation is required to abandon an active ring. */
+static int capture_discard_locked(void)
+{
+	unsigned long flags, i;
+	spin_lock_irqsave(&capture_lock, flags);
+	if (lisa_iorap_state_end(&capture)) {
+		spin_unlock_irqrestore(&capture_lock, flags);
+		return -ENOENT;
+	}
+	spin_unlock_irqrestore(&capture_lock, flags);
+	static_branch_disable(&capture_enabled);
+	for (i = 0; i < capture.count; i++) {
+		fput(capture.events[i].file);
+		capture.events[i].file = NULL;
+		if (!(i & 255))
+			cond_resched();
+	}
+	capture.count = 0;
+	return 0;
+}
+
+static void capture_timeout(struct work_struct *work)
+{
+	unsigned long now;
+	mutex_lock(&capture_control);
+	now = jiffies;
+	/* A queued callback from an earlier session must not stop a newer one. */
+	if (capture.active) {
+		if (time_before(now, capture_deadline))
+			mod_delayed_work(system_wq, &capture_timeout_work,
+					 capture_deadline - now);
+		else
+			capture_discard_locked();
+	}
+	mutex_unlock(&capture_control);
+}
+
+int lisa_iorap_capture_abort(void)
+{
+	int result;
+	if (in_interrupt())
+		return -EINVAL;
+	if (!uid_eq(current_euid(), GLOBAL_ROOT_UID) &&
+	    __kuid_val(current_euid()) != 1000)
+		return -EPERM;
+	mutex_lock(&capture_control);
+	result = capture_discard_locked();
+	cancel_delayed_work(&capture_timeout_work);
+	mutex_unlock(&capture_control);
+	return result;
+}
+
 int lisa_iorap_capture_begin(kuid_t uid)
 {
 	unsigned long flags;
@@ -95,8 +152,12 @@ int lisa_iorap_capture_begin(kuid_t uid)
 	spin_lock_irqsave(&capture_lock, flags);
 	result = lisa_iorap_state_begin(&capture, __kuid_val(uid));
 	spin_unlock_irqrestore(&capture_lock, flags);
-	if (!result)
+	if (!result) {
 		static_branch_enable(&capture_enabled);
+		capture_deadline = jiffies + msecs_to_jiffies(30000);
+		mod_delayed_work(system_wq, &capture_timeout_work,
+				 msecs_to_jiffies(30000));
+	}
 	mutex_unlock(&capture_control);
 	return result ? -EBUSY : 0;
 }
@@ -124,6 +185,7 @@ struct lisa_iorap_snapshot *lisa_iorap_capture_end(void)
 	}
 	spin_unlock_irqrestore(&capture_lock, flags);
 	static_branch_disable(&capture_enabled);
+	cancel_delayed_work(&capture_timeout_work);
 	/* active is false under capture_lock; late callbacks can no longer append. */
 	snapshot->uid = capture.uid;
 	snapshot->count = capture.count;
