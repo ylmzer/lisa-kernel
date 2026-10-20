@@ -39,6 +39,10 @@ jobs:
             -fsanitize=address,undefined .lisa/tests/lisa_iorap_legacy_request_test.c \
             -o /tmp/lisa-iorap-legacy-request-test
           /tmp/lisa-iorap-legacy-request-test | tee dist/iorap/legacy-request-test.txt
+          gcc -std=gnu11 -O1 -g -Wall -Wextra -Werror \
+            -fsanitize=address,undefined .lisa/tests/lisa_iorap_legacy_adapter_test.c \
+            -o /tmp/lisa-iorap-legacy-adapter-test
+          /tmp/lisa-iorap-legacy-adapter-test | tee dist/iorap/legacy-adapter-test.txt
       - name: Configure existing Lisa baseline
         run: bash .lisa/build.sh config-only
       - name: Compile enabled and disabled capture paths without building an image

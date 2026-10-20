@@ -1,11 +1,13 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /* Bounded v2 page-cache transport. Not the incompatible PTE/preread ABI. */
 #ifdef CONFIG_LISA_IORAP_LEGACY
+#ifndef LISA_IORAP_LEGACY_HOST_TEST
 #include <linux/capability.h>
 #include <linux/init.h>
 #include <linux/miscdevice.h>
 #include <linux/uaccess.h>
 #include <linux/user_namespace.h>
+#endif
 #include "lisa_iorap_legacy_request.h"
 #include "lisa_iorap_legacy_wire.h"
 #define LISA_IORAP_LEGACY_SLOTS 8
@@ -176,6 +178,7 @@ static long legacy_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	__le64 size;
 	void __user *user = (void __user *)arg;
 	int slot, error = 0;
+	(void)file;
 	if (!legacy_allowed())
 		return -EPERM;
 	op = lisa_iorap_legacy_operation(cmd);
