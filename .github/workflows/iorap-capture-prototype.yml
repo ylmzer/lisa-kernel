@@ -66,6 +66,13 @@ jobs:
           make -j2 "${args[@]}" mm/lisa_iorap_capture.o mm/filemap.o mm/madvise.o 2>&1 | tee dist/iorap/enabled-compile.txt
           llvm-nm-14 --defined-only out/lisa/mm/lisa_iorap_capture.o > dist/iorap/capture-symbols.txt
           grep -q lisa_iorap_capture_page dist/iorap/capture-symbols.txt
+          scripts/config --file out/lisa/.config -d LISA_IORAP_TEST
+          make "${args[@]}" olddefconfig
+          make -j2 "${args[@]}" mm/lisa_iorap_capture.o mm/madvise.o 2>&1 | tee dist/iorap/native-only-compile.txt
+          cp out/lisa/.config dist/iorap/native-only.config
+          llvm-nm-14 --defined-only out/lisa/mm/lisa_iorap_capture.o > dist/iorap/native-only-symbols.txt
+          grep -q legacy_ioctl dist/iorap/native-only-symbols.txt
+          if grep -q lisa_iorap_test_init dist/iorap/native-only-symbols.txt; then exit 1; fi
           scripts/config --file out/lisa/.config -d LISA_IORAP_ROM_PTE -d LISA_IORAP_LEGACY -d LISA_IORAP_TEST -d LISA_IORAP_CAPTURE
           make "${args[@]}" olddefconfig
           make -j2 "${args[@]}" mm/filemap.o mm/madvise.o 2>&1 | tee dist/iorap/disabled-compile.txt
