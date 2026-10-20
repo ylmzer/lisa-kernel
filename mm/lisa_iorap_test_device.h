@@ -28,9 +28,14 @@ static int test_open(struct inode *inode, struct file *file)
 		return -EPERM;
 	if (atomic_cmpxchg(&test_opened, 0, 1))
 		return -EBUSY;
+	if (atomic_cmpxchg(&capture_transport_owner, 0, 1)) {
+		atomic_set(&test_opened, 0);
+		return -EBUSY;
+	}
 	client = kzalloc(sizeof(*client), GFP_KERNEL);
 	if (!client) {
 		atomic_set(&test_opened, 0);
+		atomic_cmpxchg(&capture_transport_owner, 1, 0);
 		return -ENOMEM;
 	}
 	mutex_init(&client->lock);
@@ -156,6 +161,7 @@ static int test_release(struct inode *inode, struct file *file)
 	kvfree(client->blob);
 	kfree(client);
 	atomic_set(&test_opened, 0);
+	atomic_cmpxchg(&capture_transport_owner, 1, 0);
 	return 0;
 }
 

@@ -51,18 +51,18 @@ jobs:
             OBJCOPY=llvm-objcopy-14 OBJDUMP=llvm-objdump-14 STRIP=llvm-strip-14
             READELF=llvm-readelf-14 HOSTCC=clang-14 HOSTCXX=clang++-14
             CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_COMPAT=arm-linux-gnueabi-)
-          scripts/config --file out/lisa/.config -e LISA_IORAP_CAPTURE -e LISA_IORAP_TEST
+          scripts/config --file out/lisa/.config -e LISA_IORAP_CAPTURE -e LISA_IORAP_TEST -e LISA_IORAP_LEGACY
           make "${args[@]}" olddefconfig
           grep -qx 'CONFIG_LISA_IORAP_CAPTURE=y' out/lisa/.config
           cp out/lisa/.config dist/iorap/enabled.config
           make -j2 "${args[@]}" mm/lisa_iorap_capture.o mm/filemap.o 2>&1 | tee dist/iorap/enabled-compile.txt
           llvm-nm-14 --defined-only out/lisa/mm/lisa_iorap_capture.o > dist/iorap/capture-symbols.txt
           grep -q lisa_iorap_capture_page dist/iorap/capture-symbols.txt
-          scripts/config --file out/lisa/.config -d LISA_IORAP_TEST -d LISA_IORAP_CAPTURE
+          scripts/config --file out/lisa/.config -d LISA_IORAP_LEGACY -d LISA_IORAP_TEST -d LISA_IORAP_CAPTURE
           make "${args[@]}" olddefconfig
           make -j2 "${args[@]}" mm/filemap.o 2>&1 | tee dist/iorap/disabled-compile.txt
           cp out/lisa/.config dist/iorap/disabled.config
-          printf 'Capture-only prototype: no miscdevice, ABI, Image, ZIP or device acceptance.\n' > dist/iorap/LIMITATIONS.txt
+          printf 'Compile-only legacy transport: PTE/version/names not implemented; no Image, ZIP or runtime acceptance.\n' > dist/iorap/LIMITATIONS.txt
       - name: Upload diagnostic evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

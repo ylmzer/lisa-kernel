@@ -876,3 +876,12 @@ config LISA_IORAP_TEST
 	help
 	  Root/CAP_SYS_ADMIN-only self-UID capture test endpoint.
 	  Separate diagnostic ABI; no Xiaomi daemon compatibility.
+
+config LISA_IORAP_LEGACY
+	bool "Experimental Xiaomi v2 page-cache transport"
+	depends on LISA_IORAP_CAPTURE
+	default n
+	help
+	  Bounded persistent UID/package collection and legacy size/info queries.
+	  PTE and version ioctls are not implemented and return ENOTTY.
+	  Keep disabled until the matching ROM control path is validated.

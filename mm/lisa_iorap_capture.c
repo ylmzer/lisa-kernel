@@ -56,6 +56,10 @@ struct lisa_iorap_snapshot {
 };
 
 static DEFINE_MUTEX(capture_control);
+/* 0 idle, 1 diagnostic fd, 2 legacy collection, 3 legacy finish/abort.
+ * Timeout can release 2 but must never release 3 while its owner is working.
+ */
+static atomic_t capture_transport_owner = ATOMIC_INIT(0);
 static DEFINE_SPINLOCK(capture_lock);
 static DEFINE_STATIC_KEY_FALSE(capture_enabled);
 static unsigned long capture_deadline;
@@ -117,8 +121,8 @@ static void capture_timeout(struct work_struct *work)
 		if (time_before(now, capture_deadline))
 			mod_delayed_work(system_wq, &capture_timeout_work,
 					 capture_deadline - now);
-		else
-			capture_discard_locked();
+		else if (!capture_discard_locked())
+			atomic_cmpxchg(&capture_transport_owner, 2, 0);
 	}
 	mutex_unlock(&capture_control);
 }
@@ -340,3 +344,4 @@ fail:
 }
 
 #include "lisa_iorap_test_device.h"
+#include "lisa_iorap_legacy_device.h"
