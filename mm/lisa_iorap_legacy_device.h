@@ -207,6 +207,21 @@ static long legacy_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			return -EINVAL;
 		mutex_lock(&legacy_control);
 		WRITE_ONCE(legacy_native_enabled, enabled != 0);
+		if (!enabled) {
+			if (atomic_cmpxchg(&capture_transport_owner, 2, 3) == 2) {
+				lisa_iorap_capture_abort();
+				atomic_cmpxchg(&capture_transport_owner, 3, 0);
+			}
+#ifdef CONFIG_LISA_IORAP_ROM_PTE
+			{
+				unsigned long flags;
+				spin_lock_irqsave(&pte_active_lock, flags);
+				if (pte_running)
+					atomic_set(&pte_cancel, 1);
+				spin_unlock_irqrestore(&pte_active_lock, flags);
+			}
+#endif
+		}
 		mutex_unlock(&legacy_control);
 		return 0;
 	}

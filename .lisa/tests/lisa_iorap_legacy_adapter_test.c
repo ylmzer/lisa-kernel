@@ -151,6 +151,11 @@ int main(void)
  assert(!call(1,input));fail_alloc=1;assert(call(5,input)==-ENOMEM);fail_alloc=0;
  assert(!active && atomic_read(&capture_transport_owner)==0);
  assert(!call(1,input));assert(!call(6,input));assert(!active);
+ assert(!call(1,input));enabled=0;
+ assert(!legacy_ioctl(NULL,LISA_IORAP_NATIVE_SWITCH,(unsigned long)&enabled));
+ assert(!active && atomic_read(&capture_transport_owner)==0);
+ euid=1000;assert(legacy_open(NULL,NULL)==-EAGAIN);euid=0;
+ enabled=1;assert(!legacy_ioctl(NULL,LISA_IORAP_NATIVE_SWITCH,(unsigned long)&enabled));
  assert(legacy_ioctl(NULL,0x80044c14U,0)==-ENOTTY);
  assert(call(17,input)==-ENOTTY && call(18,input)==-ENOTTY);
  /* Exercise byte-budget eviction while empty slots still exist. */

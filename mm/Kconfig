@@ -889,7 +889,7 @@ config LISA_IORAP_LEGACY
 
 config LISA_IORAP_ROM_PTE
 	bool "Experimental matched HyperOS anonymous-page preread"
-	depends on LISA_IORAP_LEGACY && SWAP
+	depends on LISA_IORAP_LEGACY && SWAP && ADVISE_SYSCALLS
 	default n
 	help
 	  Snapshot resident anonymous-page locations for a checked PID/UID and

@@ -230,7 +230,14 @@ static int lisa_iorap_pte_stop(const struct lisa_iorap_legacy_request *key)
 static void lisa_iorap_pte_clear(const struct lisa_iorap_legacy_request *key)
 {
 	unsigned int i;
-	lisa_iorap_pte_stop(key);
+	unsigned long flags;
+	/* Clear is an app-wide operation; a zero PID must still cancel that
+	 * app's in-flight preread before waiting for its plan lock.
+	 */
+	spin_lock_irqsave(&pte_active_lock, flags);
+	if (pte_running && lisa_iorap_legacy_same_app(&pte_active_key, key))
+		atomic_set(&pte_cancel, 1);
+	spin_unlock_irqrestore(&pte_active_lock, flags);
 	mutex_lock(&pte_control);
 	for (i = 0; i < IORAP_PTE_SLOTS; i++)
 		if (pte_plans[i] && lisa_iorap_legacy_same_app(&pte_plans[i]->key, key)) {

@@ -17,6 +17,22 @@ static void rom_key(struct iorap_rom_request *r)
  memset(r,0,sizeof(*r));r->uid=htole32(getuid());r->pid=htole32(getpid());
  memcpy(r->package,"com.test.iorapfixture",21);
 }
+static struct iorap_rom_request rom_cleanup_key;
+static int rom_cleanup_needed;
+static void rom_cleanup(void)
+{
+ int fd;
+ if(!rom_cleanup_needed)return;
+ fd=open("/dev/iorap_dev",O_RDONLY|O_CLOEXEC);
+ if(fd<0){perror("cleanup open");return;}
+ if(ioctl(fd,0xc1084c03U,&rom_cleanup_key))perror("cleanup clear");
+ close(fd);
+}
+static void rom_cleanup_prepare(const struct iorap_rom_request *key)
+{
+ rom_cleanup_key=*key;rom_cleanup_needed=1;
+ require(!atexit(rom_cleanup),"register owned-test cleanup");
+}
 static void rom_ioctl(unsigned nr,void *request)
 {
  int fd=rom_open();require(!ioctl(fd,0xc1084c00U+nr,request),"ROM ioctl");
@@ -32,7 +48,7 @@ static void rom_capture_test(void)
  char path[]="/data/local/tmp/lisa-iorap-fixture-XXXXXX";
  unsigned char page[4096],*response;unsigned i,j,found=0;int fd,file,other;
  unsigned pages[]={0,63,64,129};size_t bytes,offset;uint32_t count;
- rom_key(&r);file=mkstemp(path);require(file>=0,"create owned ROM fixture");
+ rom_key(&r);rom_cleanup_prepare(&r);file=mkstemp(path);require(file>=0,"create owned ROM fixture");
  memset(page,0x6d,sizeof(page));
  for(i=0;i<130;i++)require(pwrite(file,page,sizeof(page),i*4096)==sizeof(page),"write fixture");
  require(!fstat(file,&st),"fixture stat");
@@ -70,6 +86,7 @@ static void rom_capture_test(void)
  expect_error(fd,0xc1084c07U,(unsigned long)&q,ENOENT);
  expect_error(fd,0x80044c14U,(unsigned long)&q,ENOTTY);
  close(fd);close(file);free(response);
+ rom_cleanup_needed=0;
  puts("PASS real legacy cross-fd capture, bitmap, metadata, zero-PID lookup, cleanup and v2 fallback");
  printf("Fixture retained: %s\n",path);
 }
@@ -103,7 +120,7 @@ static void rom_pte_test(void)
  }
  checksum=rom_checksum(memory,bytes);before=rom_resident(memory,bytes,vec);
  require(before==bytes/4096,"fixture initially resident");
- rom_key(&r);fd=rom_open();wrong=r;wrong.uid=htole32(getuid()+1);
+ rom_key(&r);rom_cleanup_prepare(&r);fd=rom_open();wrong=r;wrong.uid=htole32(getuid()+1);
  expect_error(fd,0xc1084c10U,(unsigned long)&wrong,EPERM);
  wrong=r;wrong.pid=0;expect_error(fd,0xc1084c10U,(unsigned long)&wrong,EINVAL);
  close(fd);rom_ioctl(16,&r);
@@ -124,6 +141,7 @@ static void rom_pte_test(void)
  require(rom_checksum(memory,bytes)==checksum,"anonymous data integrity after swap-in");
  rom_ioctl(18,&r);rom_ioctl(3,&r);
  require(!munmap(memory,bytes),"release own mapping");free(vec);
+ rom_cleanup_needed=0;
  printf("PASS real ROM PTE snapshot/swap-in/data integrity: resident=%u pageout=%u preread=%u elapsed_us=%lld\n",
   before,swapped,after,(long long)(end.tv_sec-start.tv_sec)*1000000+(end.tv_nsec-start.tv_nsec)/1000);
 }
