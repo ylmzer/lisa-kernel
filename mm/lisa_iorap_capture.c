@@ -11,10 +11,12 @@
 #include <linux/interrupt.h>
 #include <linux/jump_label.h>
 #include <linux/lisa_iorap_capture.h>
+#include <linux/mm.h>
 #include <linux/mutex.h>
 #include <linux/sched.h>
 #include <linux/slab.h>
 #include <linux/spinlock.h>
+#include <linux/string.h>
 #include <linux/vmalloc.h>
 #include "lisa_iorap_capture_core.h"
 
