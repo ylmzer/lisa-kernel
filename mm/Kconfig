@@ -883,7 +883,8 @@ config LISA_IORAP_LEGACY
 	default n
 	help
 	  Bounded persistent UID/package collection and legacy size/info queries.
-	  PTE and version ioctls are not implemented and return ENOTTY.
+	  ROM PTE ioctls require the separate LISA_IORAP_ROM_PTE option.
+	  Unimplemented version/names/debug commands return ENOTTY.
 	  Keep disabled until the matching ROM control path is validated.
 
 config LISA_IORAP_ROM_PTE

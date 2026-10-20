@@ -16,7 +16,7 @@ int lisa_iorap_anon_willneed(struct vm_area_struct *vma,
 
 #ifdef CONFIG_LISA_IORAP_CAPTURE
 void lisa_iorap_capture_page(struct file *file, pgoff_t index);
-/* Process context only. Internal preparation API; no userspace device exists. */
+/* Process context only. Internal API; userspace transports are separately gated. */
 int lisa_iorap_capture_begin(kuid_t uid);
 /* Discards events without allocating; future endpoint release must call this. */
 int lisa_iorap_capture_abort(void);

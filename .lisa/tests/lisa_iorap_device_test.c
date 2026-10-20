@@ -76,7 +76,7 @@ int main(int argc,char **argv)
  size_t bytes=0;
  ssize_t got;
  pid_t child;
- if(argc!=2) { fprintf(stderr,"Usage: %s layout|capture|close|crash|timeout\n",argv[0]); return 2; }
+ if(argc!=2) { fprintf(stderr,"Usage: %s layout|capture|close|crash|timeout|legacy|pte|native-enable|native-disable\n",argv[0]); return 2; }
  if(rom_test_mode(argv[1])) return 0;
  if(!strcmp(argv[1],"layout")) { puts("PASS diagnostic UAPI 24/304-byte layout"); return 0; }
  if(strcmp(argv[1],"capture") && strcmp(argv[1],"close") &&

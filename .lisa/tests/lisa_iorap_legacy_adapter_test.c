@@ -14,6 +14,7 @@
 #include <stdbool.h>
 #include <linux/types.h>
 #define CONFIG_LISA_IORAP_LEGACY 1
+#define CONFIG_LISA_IORAP_TEST 1
 #define LISA_IORAP_LEGACY_HOST_TEST 1
 #define LISA_IORAP_MAX_FILES 64
 #define __user

@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /* Exact ARM64 v2 request decoding, shared by kernel transport and host tests.
- * This does not register a device or claim support for PTE/version ioctls.
+ * It identifies ROM PTE requests; implementations are separately gated.
+ * It neither registers devices nor advertises a driver version.
  */
 #ifndef LISA_IORAP_LEGACY_REQUEST_H
 #define LISA_IORAP_LEGACY_REQUEST_H

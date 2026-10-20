@@ -26,7 +26,11 @@ static unsigned long legacy_cache_bytes;
  * root/CAP_SYS_ADMIN validation of the new driver has completed.
  */
 #define LISA_IORAP_NATIVE_SWITCH 0x40044cfeU
+#ifdef CONFIG_LISA_IORAP_TEST
 static bool legacy_native_enabled;
+#else
+static const bool legacy_native_enabled = true;
+#endif
 
 static bool legacy_allowed(void)
 {
@@ -191,6 +195,7 @@ static long legacy_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	(void)file;
 	if (!legacy_allowed())
 		return -EPERM;
+#ifdef CONFIG_LISA_IORAP_TEST
 	if (cmd == LISA_IORAP_NATIVE_SWITCH) {
 		unsigned int enabled;
 		if (!uid_eq(current_euid(), GLOBAL_ROOT_UID) ||
@@ -205,11 +210,12 @@ static long legacy_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		mutex_unlock(&legacy_control);
 		return 0;
 	}
+#endif
 	if (__kuid_val(current_euid()) == 1000 && !READ_ONCE(legacy_native_enabled))
 		return -EAGAIN;
 	op = lisa_iorap_legacy_operation(cmd);
-	/* Names/debug/PTE are not silently emulated. The current real daemon
-	 * only consumes size/info. Version ENOTTY selects its actual v2 path.
+	/* Names/debug/version are not silently emulated. Matched PTE requests
+	 * are handled below only when enabled. Version ENOTTY selects v2.
 	 */
 	if (!op || op == LISA_IORAP_LEGACY_NAMES)
 		return -ENOTTY;

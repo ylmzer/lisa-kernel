@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Experimental capture foundation, NOT a Xiaomi iorap ABI implementation.
- * Optional separate diagnostic device; no Xiaomi device ABI or auto capture.
+ * Bounded capture foundation with separately gated diagnostic/ROM transports.
+ * All features default off; callbacks never start a session automatically.
  * Capture callbacks do not allocate, resolve paths, release files, or sleep.
  */
 #include <linux/cred.h>
