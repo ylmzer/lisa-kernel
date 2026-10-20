@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* Bounded v2 page-cache transport. Not the incompatible PTE/preread ABI. */
+/* Bounded v2 transport; the separately gated PTE path matches this ROM's JNI. */
 #ifdef CONFIG_LISA_IORAP_LEGACY
 #ifndef LISA_IORAP_LEGACY_HOST_TEST
 #include <linux/capability.h>
@@ -34,6 +34,7 @@ static bool legacy_allowed(void)
 		ns_capable(&init_user_ns, CAP_SYS_ADMIN) :
 		__kuid_val(current_euid()) == 1000;
 }
+#include "lisa_iorap_rom_pte.h"
 static int legacy_open(struct inode *inode, struct file *file)
 {
 	return legacy_allowed() ? nonseekable_open(inode, file) : -EPERM;
@@ -196,6 +197,14 @@ static long legacy_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	if (op == LISA_IORAP_LEGACY_INFO &&
 	    lisa_iorap_legacy_capacity(input, copy_bytes, &capacity))
 		return -EINVAL;
+#ifdef CONFIG_LISA_IORAP_ROM_PTE
+	if (op == LISA_IORAP_ROM_PTE_SNAPSHOT)
+		return lisa_iorap_pte_snapshot(&key);
+	if (op == LISA_IORAP_ROM_PTE_PREREAD)
+		return lisa_iorap_pte_preread(&key);
+	if (op == LISA_IORAP_ROM_PTE_STOP)
+		return lisa_iorap_pte_stop(&key);
+#endif
 	mutex_lock(&legacy_control);
 	if (atomic_read(&capture_transport_owner) == 1) {
 		error = -EBUSY;
@@ -229,6 +238,9 @@ static long legacy_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			slot = legacy_find(&key);
 			if (slot >= 0)
 				legacy_evict(slot);
+#ifdef CONFIG_LISA_IORAP_ROM_PTE
+			lisa_iorap_pte_clear(&key);
+#endif
 		}
 		break;
 	case LISA_IORAP_LEGACY_SIZE:

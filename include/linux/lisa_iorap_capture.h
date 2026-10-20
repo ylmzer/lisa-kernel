@@ -7,6 +7,12 @@
 struct file;
 struct lisa_iorap_snapshot;
 struct lisa_iorap_bitmap_snapshot;
+struct vm_area_struct;
+#ifdef CONFIG_LISA_IORAP_ROM_PTE
+/* mmap_sem held in read mode; anonymous VMA only. No userspace data copied. */
+int lisa_iorap_anon_willneed(struct vm_area_struct *vma,
+		unsigned long start, unsigned long end);
+#endif
 
 #ifdef CONFIG_LISA_IORAP_CAPTURE
 void lisa_iorap_capture_page(struct file *file, pgoff_t index);

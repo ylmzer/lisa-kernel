@@ -13,9 +13,9 @@ int main(void)
 	unsigned char storage[282], *data=storage+1;
 	struct lisa_iorap_legacy_request r,before,consumer;
 	unsigned long capacity=123,i;
-	const unsigned commands[]={1,3,5,6,7,8,9};
+	const unsigned commands[]={1,3,5,6,7,8,9,16,17,18};
 	const unsigned rejected[]={0xc1084c02U,0xc1084c04U,0xc1084c0fU,
-		0xc1084c10U,0xc1084c11U,0xc1084c12U,0xc1084c13U,0x80044c14U};
+		0xc1084c13U,0x80044c14U};
 	memset(data,0,280);data[0]=0x39;data[1]=0x30;data[4]=0x78;data[5]=0x56;
 	memcpy(data+8,"com.example.launch",19);
 	for(i=0;i<264;i++){

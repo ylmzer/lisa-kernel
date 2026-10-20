@@ -21,6 +21,9 @@ enum lisa_iorap_legacy_operation {
 	LISA_IORAP_LEGACY_SIZE,
 	LISA_IORAP_LEGACY_INFO,
 	LISA_IORAP_LEGACY_NAMES,
+	LISA_IORAP_ROM_PTE_SNAPSHOT,
+	LISA_IORAP_ROM_PTE_PREREAD,
+	LISA_IORAP_ROM_PTE_STOP,
 };
 static inline unsigned int lisa_iorap_legacy_u32(const unsigned char *p)
 {
@@ -38,6 +41,12 @@ lisa_iorap_legacy_operation(unsigned int cmd)
 	case 0xc1084c07U: return LISA_IORAP_LEGACY_SIZE;
 	case 0xc1084c08U: return LISA_IORAP_LEGACY_INFO;
 	case 0xc1084c09U: return LISA_IORAP_LEGACY_NAMES;
+	/* This ROM's actual JNI uses 16/17/18, unlike the 6.12 donor module.
+	 * Never infer these meanings from another module's handler names.
+	 */
+	case 0xc1084c10U: return LISA_IORAP_ROM_PTE_SNAPSHOT;
+	case 0xc1084c11U: return LISA_IORAP_ROM_PTE_PREREAD;
+	case 0xc1084c12U: return LISA_IORAP_ROM_PTE_STOP;
 	default: return LISA_IORAP_LEGACY_UNSUPPORTED;
 	}
 }

@@ -7,6 +7,7 @@
  */
 
 #include <linux/mman.h>
+#include <linux/lisa_iorap_capture.h>
 #include <linux/pagemap.h>
 #include <linux/syscalls.h>
 #include <linux/mempolicy.h>
@@ -224,6 +225,26 @@ static int swapin_walk_pmd_entry(pmd_t *pmd, unsigned long start,
 static const struct mm_walk_ops swapin_walk_ops = {
 	.pmd_entry		= swapin_walk_pmd_entry,
 };
+
+#ifdef CONFIG_LISA_IORAP_ROM_PTE
+int lisa_iorap_anon_willneed(struct vm_area_struct *vma,
+		unsigned long start, unsigned long end)
+{
+	int error;
+	/* Caller holds mmap_sem: mapping identity cannot change between its
+	 * validation and this walk. Reuse the existing MADV_WILLNEED swap path;
+	 * never install a foreign PTE, bypass file permissions, or copy contents.
+	 */
+	if (vma->vm_file || !(vma->vm_flags & VM_READ) ||
+	    (vma->vm_flags & (VM_IO | VM_PFNMAP | VM_HUGETLB)) ||
+	    start < vma->vm_start || end > vma->vm_end || start >= end ||
+	    ((start | end) & ~PAGE_MASK))
+		return -EINVAL;
+	error = walk_page_range(vma->vm_mm, start, end, &swapin_walk_ops, vma);
+	lru_add_drain();
+	return error;
+}
+#endif
 
 static void force_shm_swapin_readahead(struct vm_area_struct *vma,
 		unsigned long start, unsigned long end,

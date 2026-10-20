@@ -885,3 +885,13 @@ config LISA_IORAP_LEGACY
 	  Bounded persistent UID/package collection and legacy size/info queries.
 	  PTE and version ioctls are not implemented and return ENOTTY.
 	  Keep disabled until the matching ROM control path is validated.
+
+config LISA_IORAP_ROM_PTE
+	bool "Experimental matched HyperOS anonymous-page preread"
+	depends on LISA_IORAP_LEGACY && SWAP
+	default n
+	help
+	  Snapshot resident anonymous-page locations for a checked PID/UID and
+	  submit bounded swap-in advice to the same live address space later.
+	  Uses this ROM JNI's 16/17/18 commands, not a generic donor PTE ABI.
+	  No page contents, physical addresses, or write access are exposed.
