@@ -24,6 +24,10 @@ jobs:
             -fsanitize=address,undefined .lisa/tests/lisa_iorap_capture_test.c \
             -o /tmp/lisa-iorap-capture-test
           /tmp/lisa-iorap-capture-test | tee dist/iorap/core-test.txt
+          gcc -std=gnu11 -O1 -g -Wall -Wextra -Werror \
+            -fsanitize=address,undefined .lisa/tests/lisa_iorap_bitmap_test.c \
+            -o /tmp/lisa-iorap-bitmap-test
+          /tmp/lisa-iorap-bitmap-test dist/iorap/synthetic-response.bin | tee dist/iorap/bitmap-test.txt
       - name: Configure existing Lisa baseline
         run: bash .lisa/build.sh config-only
       - name: Compile enabled and disabled capture paths without building an image

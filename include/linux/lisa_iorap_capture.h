@@ -6,6 +6,7 @@
 
 struct file;
 struct lisa_iorap_snapshot;
+struct lisa_iorap_bitmap_snapshot;
 
 #ifdef CONFIG_LISA_IORAP_CAPTURE
 void lisa_iorap_capture_page(struct file *file, pgoff_t index);
@@ -13,6 +14,10 @@ void lisa_iorap_capture_page(struct file *file, pgoff_t index);
 int lisa_iorap_capture_begin(kuid_t uid);
 struct lisa_iorap_snapshot *lisa_iorap_capture_end(void);
 void lisa_iorap_snapshot_put(struct lisa_iorap_snapshot *snapshot);
+/* Leaves the raw snapshot owned by caller, on both success and failure. */
+struct lisa_iorap_bitmap_snapshot *lisa_iorap_snapshot_bitmap(
+		const struct lisa_iorap_snapshot *snapshot);
+void lisa_iorap_bitmap_put(struct lisa_iorap_bitmap_snapshot *snapshot);
 #else
 static inline void lisa_iorap_capture_page(struct file *file, pgoff_t index) {}
 #endif

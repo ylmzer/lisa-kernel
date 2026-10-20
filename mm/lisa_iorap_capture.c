@@ -5,6 +5,7 @@
  * Capture callbacks do not allocate, resolve paths, release files, or sleep.
  */
 #include <linux/cred.h>
+#include <linux/dcache.h>
 #include <linux/err.h>
 #include <linux/file.h>
 #include <linux/fs.h>
@@ -19,9 +20,30 @@
 #include <linux/string.h>
 #include <linux/vmalloc.h>
 #include "lisa_iorap_capture_core.h"
+#include "lisa_iorap_bitmap_core.h"
 
 #define LISA_IORAP_MAX_EVENTS 4096
 #define LISA_IORAP_MAX_PAGES (1UL << 19) /* Limit a recorded file to 2 GiB at 4K. */
+#define LISA_IORAP_MAX_FILES 64
+
+struct lisa_iorap_file_bitmap {
+	unsigned long long inode_number;
+	unsigned long long device;
+	loff_t file_bytes;
+	struct timespec64 mtime;
+	struct timespec64 ctime;
+	unsigned long bits;
+	unsigned long words;
+	unsigned long unique_pages;
+	unsigned long long *bitmap;
+	char path[256];
+};
+
+struct lisa_iorap_bitmap_snapshot {
+	unsigned int uid;
+	unsigned long files;
+	struct lisa_iorap_file_bitmap records[];
+};
 
 struct lisa_iorap_snapshot {
 	unsigned int uid;
@@ -129,4 +151,127 @@ void lisa_iorap_snapshot_put(struct lisa_iorap_snapshot *snapshot)
 			cond_resched();
 	}
 	kvfree(snapshot);
+}
+
+void lisa_iorap_bitmap_put(struct lisa_iorap_bitmap_snapshot *snapshot)
+{
+	unsigned long i;
+
+	if (IS_ERR_OR_NULL(snapshot))
+		return;
+	if (WARN_ON_ONCE(in_interrupt()))
+		return;
+	for (i = 0; i < snapshot->files; i++)
+		kvfree(snapshot->records[i].bitmap);
+	kvfree(snapshot);
+}
+
+/* Process-context consolidation. No unverified Xiaomi metadata is emitted. */
+struct lisa_iorap_bitmap_snapshot *lisa_iorap_snapshot_bitmap(
+		const struct lisa_iorap_snapshot *snapshot)
+{
+	struct lisa_iorap_bitmap_snapshot *result;
+	struct file *keys[LISA_IORAP_MAX_FILES];
+	struct lisa_iorap_file_bitmap *r;
+	struct inode *inode;
+	struct file *file;
+	unsigned long i, j, words;
+	char *path;
+	int error = 0, marked;
+
+	if (in_interrupt() || IS_ERR_OR_NULL(snapshot))
+		return ERR_PTR(-EINVAL);
+	if (!uid_eq(current_euid(), GLOBAL_ROOT_UID) &&
+	    __kuid_val(current_euid()) != 1000)
+		return ERR_PTR(-EPERM);
+	/* A truncated capture must not become a seemingly complete bitmap. */
+	if (snapshot->dropped || snapshot->count > LISA_IORAP_MAX_EVENTS)
+		return ERR_PTR(-EOVERFLOW);
+	result = kvzalloc(sizeof(*result) + LISA_IORAP_MAX_FILES * sizeof(*r),
+			 GFP_KERNEL);
+	if (!result)
+		return ERR_PTR(-ENOMEM);
+	result->uid = snapshot->uid;
+	for (i = 0; i < snapshot->count; i++) {
+		file = snapshot->events[i].file;
+		inode = file_inode(file);
+		for (j = 0; j < result->files; j++)
+			if (file_inode(keys[j]) == inode &&
+			    keys[j]->f_path.mnt == file->f_path.mnt)
+				break;
+		if (j == result->files) {
+			if (j == LISA_IORAP_MAX_FILES) {
+				error = -E2BIG;
+				goto fail;
+			}
+			r = &result->records[j];
+			inode_lock(inode);
+			r->file_bytes = i_size_read(inode);
+			r->mtime = inode->i_mtime;
+			r->ctime = inode->i_ctime;
+			r->inode_number = inode->i_ino;
+			r->device = inode->i_sb->s_dev;
+			inode_unlock(inode);
+			if (r->file_bytes <= 0 ||
+			    r->file_bytes > (loff_t)LISA_IORAP_MAX_PAGES * PAGE_SIZE) {
+				error = -ERANGE;
+				goto fail;
+			}
+			r->bits = DIV_ROUND_UP_ULL(r->file_bytes, PAGE_SIZE);
+			if (lisa_iorap_bitmap_words(r->bits, &words)) {
+				error = -ERANGE;
+				goto fail;
+			}
+			r->words = words;
+			path = file_path(file, r->path, sizeof(r->path));
+			if (IS_ERR(path)) {
+				error = PTR_ERR(path);
+				goto fail;
+			}
+			if (path[0] != '/' || d_unlinked(file->f_path.dentry)) {
+				error = -ESTALE;
+				goto fail;
+			}
+			memmove(r->path, path, strlen(path) + 1);
+			r->bitmap = kvcalloc(words, sizeof(*r->bitmap), GFP_KERNEL);
+			if (!r->bitmap) {
+				error = -ENOMEM;
+				goto fail;
+			}
+			keys[j] = file;
+			/* Cleanup owns the bitmap from this point, even if marking fails. */
+			result->files++;
+		}
+		r = &result->records[j];
+		marked = lisa_iorap_bitmap_mark(r->bitmap, r->words, r->bits,
+					      snapshot->events[i].index);
+		if (marked < 0) {
+			error = -ESTALE;
+			goto fail;
+		}
+		r->unique_pages += marked;
+		if (!(i & 255))
+			cond_resched();
+	}
+	/* Detect truncation or modification during consolidation. Pinned files in
+	 * the raw snapshot keep every inode alive; keys never escape this function.
+	 */
+	for (j = 0; j < result->files; j++) {
+		inode = file_inode(keys[j]);
+		r = &result->records[j];
+		inode_lock(inode);
+		if (r->file_bytes != i_size_read(inode) ||
+		    !timespec64_equal(&r->mtime, &inode->i_mtime) ||
+		    !timespec64_equal(&r->ctime, &inode->i_ctime))
+			error = -ESTALE;
+		inode_unlock(inode);
+		if (error || d_unlinked(keys[j]->f_path.dentry)) {
+			error = -ESTALE;
+			goto fail;
+		}
+	}
+	return result;
+fail:
+	lisa_iorap_bitmap_put(result);
+	return ERR_PTR(error);
 }
