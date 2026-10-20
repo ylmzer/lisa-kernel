@@ -67,6 +67,9 @@ if [ "${ZYGOTE_DIAG:-0}" = 1 ]; then
 else
   scripts/config --file "$OUT/.config" -d LISA_ZYGOTE_DIAG
 fi
+if [ "${IORAP_TEST:-0}" = 1 ]; then
+  scripts/config --file "$OUT/.config" -e LISA_IORAP_CAPTURE -e LISA_IORAP_TEST
+fi
 cp "$OUT/.config" "$DIST/requested.config"
 make "${ARGS[@]}" olddefconfig 2>&1 | tee "$DIST/config.log"
 cp "$OUT/.config" "$DIST/resolved.config"

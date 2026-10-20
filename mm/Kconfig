@@ -868,3 +868,11 @@ config LISA_IORAP_CAPTURE
 	  Internal bounded file/page capture preparation. No Xiaomi device ABI,
 	  automatic start, prefetch interface, or installable feature is provided.
 	  Keep disabled outside the dedicated compile and capture tests.
+
+config LISA_IORAP_TEST
+	bool "Lisa iorap privileged diagnostic device"
+	depends on LISA_IORAP_CAPTURE
+	default n
+	help
+	  Root/CAP_SYS_ADMIN-only self-UID capture test endpoint.
+	  Separate diagnostic ABI; no Xiaomi daemon compatibility.

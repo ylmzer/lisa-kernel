@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Experimental capture foundation, NOT a Xiaomi iorap ABI implementation.
- * No miscdevice, ioctl, proc command, or automatic start is registered.
+ * Optional separate diagnostic device; no Xiaomi device ABI or auto capture.
  * Capture callbacks do not allocate, resolve paths, release files, or sleep.
  */
 #include <linux/cred.h>
@@ -15,6 +15,7 @@
 #include <linux/workqueue.h>
 #include <linux/lisa_iorap_capture.h>
 #include <linux/mm.h>
+#include <linux/module.h>
 #include <linux/mutex.h>
 #include <linux/sched.h>
 #include <linux/slab.h>
@@ -337,3 +338,5 @@ fail:
 	lisa_iorap_bitmap_put(result);
 	return ERR_PTR(error);
 }
+
+#include "lisa_iorap_test_device.h"

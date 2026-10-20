@@ -3,6 +3,11 @@ on:
   push:
     branches: [codex/iorap-capture-20261020]
   workflow_dispatch:
+    inputs:
+      build_image:
+        description: Build the diagnostic Image and AnyKernel ZIP after narrow checks
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -28,6 +33,8 @@ jobs:
             -fsanitize=address,undefined .lisa/tests/lisa_iorap_bitmap_test.c \
             -o /tmp/lisa-iorap-bitmap-test
           /tmp/lisa-iorap-bitmap-test dist/iorap/synthetic-response.bin | tee dist/iorap/bitmap-test.txt
+          gcc -std=gnu11 -O2 -Wall -Wextra -Werror .lisa/tests/lisa_iorap_device_test.c -o /tmp/lisa-iorap-device-test
+          /tmp/lisa-iorap-device-test layout | tee dist/iorap/device-layout.txt
       - name: Configure existing Lisa baseline
         run: bash .lisa/build.sh config-only
       - name: Compile enabled and disabled capture paths without building an image
@@ -40,14 +47,14 @@ jobs:
             OBJCOPY=llvm-objcopy-14 OBJDUMP=llvm-objdump-14 STRIP=llvm-strip-14
             READELF=llvm-readelf-14 HOSTCC=clang-14 HOSTCXX=clang++-14
             CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_COMPAT=arm-linux-gnueabi-)
-          scripts/config --file out/lisa/.config -e LISA_IORAP_CAPTURE
+          scripts/config --file out/lisa/.config -e LISA_IORAP_CAPTURE -e LISA_IORAP_TEST
           make "${args[@]}" olddefconfig
           grep -qx 'CONFIG_LISA_IORAP_CAPTURE=y' out/lisa/.config
           cp out/lisa/.config dist/iorap/enabled.config
           make -j2 "${args[@]}" mm/lisa_iorap_capture.o mm/filemap.o 2>&1 | tee dist/iorap/enabled-compile.txt
           llvm-nm-14 --defined-only out/lisa/mm/lisa_iorap_capture.o > dist/iorap/capture-symbols.txt
           grep -q lisa_iorap_capture_page dist/iorap/capture-symbols.txt
-          scripts/config --file out/lisa/.config -d LISA_IORAP_CAPTURE
+          scripts/config --file out/lisa/.config -d LISA_IORAP_TEST -d LISA_IORAP_CAPTURE
           make "${args[@]}" olddefconfig
           make -j2 "${args[@]}" mm/filemap.o 2>&1 | tee dist/iorap/disabled-compile.txt
           cp out/lisa/.config dist/iorap/disabled.config
@@ -60,4 +67,56 @@ jobs:
           path: |
             dist/iorap
             dist/lisa/config.log
+          retention-days: 7
+  device-image:
+    needs: capture-only
+    if: github.event_name == 'workflow_dispatch' && inputs.build_image
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
+    env:
+      IORAP_TEST: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Install established toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc bison flex make gcc g++ libssl-dev libelf-dev \
+            libncurses-dev python3 rsync zip clang-14 lld-14 llvm-14 \
+            gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi
+      - name: Build diagnostic kernel with existing vendor checks
+        run: bash .lisa/build.sh build
+      - name: Verify test endpoint and build static ARM64 test tool
+        run: |
+          grep -qx 'CONFIG_LISA_IORAP_TEST=y' dist/lisa/resolved.config
+          grep -qx 'CONFIG_LISA_IORAP_CAPTURE=y' dist/lisa/resolved.config
+          grep -q 'lisa_iorap_test_init' dist/lisa/System.map
+          aarch64-linux-gnu-gcc -static -std=gnu11 -O2 -Wall -Wextra -Werror \
+            .lisa/tests/lisa_iorap_device_test.c -o dist/lisa/lisa-iorap-test-arm64
+          aarch64-linux-gnu-readelf -h dist/lisa/lisa-iorap-test-arm64 > dist/lisa/test-tool-elf.txt
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: osm0sis/AnyKernel3
+          ref: 020dfeccf9d7e962a48400fc94d3e451df92eead
+          path: out/anykernel
+      - name: Package dedicated diagnostic kernel
+        run: |
+          cp .lisa/anykernel.sh out/anykernel/anykernel.sh
+          cp dist/lisa/Image out/anykernel/Image
+          python3 .lisa/tests/package_iorap_test.py
+      - name: Upload kernel test evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: lisa-iorap-device-test-${{ github.run_id }}
+          path: |
+            dist/lisa/*.zip
+            dist/lisa/Image
+            dist/lisa/*config*
+            dist/lisa/*log
+            dist/lisa/System.map
+            dist/lisa/Module.symvers
+            dist/lisa/SHA256SUMS*
+            dist/lisa/*info*
+            dist/lisa/lisa-iorap-test-arm64
+            dist/lisa/test-tool-elf.txt
           retention-days: 7
