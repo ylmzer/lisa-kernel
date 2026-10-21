@@ -1,9 +1,10 @@
 from pathlib import Path
-import hashlib, zipfile
+import hashlib, zipfile, os
 from datetime import datetime, timezone, timedelta
 root=Path('out/anykernel');dist=Path('dist/lisa')
 stamp=datetime.now(timezone(timedelta(hours=3))).strftime('%d-%m-%Y-%H-%M')
-package=dist/f'ylmzer-HyperOSPro-IORAP-TEST-{stamp}.zip'
+mode='NATIVE-CANDIDATE' if os.environ.get('IORAP_NATIVE')=='1' else 'TEST'
+package=dist/f'ylmzer-HyperOSPro-IORAP-{mode}-{stamp}.zip'
 with zipfile.ZipFile(package,'w',zipfile.ZIP_DEFLATED) as z:
  for p in sorted(root.rglob('*')):
   rel=p.relative_to(root)

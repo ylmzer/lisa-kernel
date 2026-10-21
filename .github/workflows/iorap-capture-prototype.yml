@@ -12,6 +12,10 @@ on:
         description: Explicitly include the gated ROM-specific legacy and PTE transport
         type: boolean
         default: false
+      native_only:
+        description: Omit diagnostic endpoint and private gate for boot-order validation
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -93,7 +97,8 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 180
     env:
-      IORAP_TEST: '1'
+      IORAP_TEST: ${{ inputs.native_only && '0' || '1' }}
+      IORAP_NATIVE: ${{ inputs.native_only && '1' || '0' }}
       IORAP_INTEGRATION: ${{ inputs.build_integration && '1' || '0' }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -107,9 +112,15 @@ jobs:
         run: bash .lisa/build.sh build
       - name: Verify test endpoint and build static ARM64 test tool
         run: |
-          grep -qx 'CONFIG_LISA_IORAP_TEST=y' dist/lisa/resolved.config
+          if [ "$IORAP_NATIVE" = 1 ]; then
+            test "$IORAP_INTEGRATION" = 1
+            grep -qx '# CONFIG_LISA_IORAP_TEST is not set' dist/lisa/resolved.config
+            if grep -q lisa_iorap_test_init dist/lisa/System.map; then exit 1; fi
+          else
+            grep -qx 'CONFIG_LISA_IORAP_TEST=y' dist/lisa/resolved.config
+            grep -q lisa_iorap_test_init dist/lisa/System.map
+          fi
           grep -qx 'CONFIG_LISA_IORAP_CAPTURE=y' dist/lisa/resolved.config
-          grep -q 'lisa_iorap_test_init' dist/lisa/System.map
           if [ "$IORAP_INTEGRATION" = 1 ]; then
             grep -qx 'CONFIG_LISA_IORAP_LEGACY=y' dist/lisa/resolved.config
             grep -qx 'CONFIG_LISA_IORAP_ROM_PTE=y' dist/lisa/resolved.config

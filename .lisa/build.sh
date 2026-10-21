@@ -71,8 +71,13 @@ if [ "${IORAP_TEST:-0}" = 1 ]; then
   scripts/config --file "$OUT/.config" -e LISA_IORAP_CAPTURE -e LISA_IORAP_TEST
 fi
 if [ "${IORAP_INTEGRATION:-0}" = 1 ]; then
-  scripts/config --file "$OUT/.config" -e LISA_IORAP_CAPTURE -e LISA_IORAP_TEST \
+  scripts/config --file "$OUT/.config" -e LISA_IORAP_CAPTURE \
     -e LISA_IORAP_LEGACY -e LISA_IORAP_ROM_PTE
+  if [ "${IORAP_NATIVE:-0}" = 1 ]; then
+    scripts/config --file "$OUT/.config" -d LISA_IORAP_TEST
+  else
+    scripts/config --file "$OUT/.config" -e LISA_IORAP_TEST
+  fi
 fi
 cp "$OUT/.config" "$DIST/requested.config"
 make "${ARGS[@]}" olddefconfig 2>&1 | tee "$DIST/config.log"
