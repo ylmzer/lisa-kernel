@@ -26,7 +26,7 @@
 #include "lisa_iorap_capture_core.h"
 #include "lisa_iorap_bitmap_core.h"
 
-#define LISA_IORAP_MAX_EVENTS 4096
+#define LISA_IORAP_MAX_EVENTS 65536 /* Measured cold launch: 51988 callbacks. */
 #define LISA_IORAP_MAX_PAGES (1UL << 19) /* Limit a recorded file to 2 GiB at 4K. */
 #define LISA_IORAP_MAX_FILES 64
 
@@ -275,6 +275,8 @@ struct lisa_iorap_bitmap_snapshot *lisa_iorap_snapshot_bitmap(
 				break;
 		if (j == result->files) {
 			if (j == LISA_IORAP_MAX_FILES) {
+				pr_warn_ratelimited("lisa_iorap: file quota=%lu events=%lu\n",
+						    result->files, snapshot->count);
 				error = -E2BIG;
 				goto fail;
 			}

@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <pthread.h>
 #include "../../mm/lisa_iorap_capture_core.h"
 
@@ -26,6 +27,40 @@ static void *record_thread(void *arg)
 		pthread_mutex_unlock(&lock);
 	}
 	return NULL;
+}
+
+static void measured_launch_budget(void)
+{
+	struct lisa_iorap_capture_state large = {0};
+	unsigned long i;
+	large.capacity=65536;large.seen_capacity=131072;large.max_pages=524288;
+	large.events=calloc(large.capacity,sizeof(*large.events));
+	large.seen=calloc(large.seen_capacity,sizeof(*large.seen));
+	assert(large.events && large.seen);
+	assert(!lisa_iorap_state_begin(&large,10001));
+	/* Upper bound from the real cold launch's 4096 + 47892 callbacks. */
+	for(i=0;i<51988;i++)
+		assert(lisa_iorap_state_record_mapping(&large,10001,
+			&file_tokens[0],&file_tokens[0],i)==LISA_IORAP_RECORDED);
+	for(i=0;i<1000000;i++)
+		assert(lisa_iorap_state_record_mapping(&large,10001,
+			&file_tokens[i%4],&file_tokens[0],i%51988)==LISA_IORAP_IGNORED);
+	assert(large.count==51988 && !large.dropped);
+	for(i=51988;i<65536;i++)
+		assert(lisa_iorap_state_record_mapping(&large,10001,
+			&file_tokens[0],&file_tokens[0],i)==LISA_IORAP_RECORDED);
+	assert(lisa_iorap_state_record_mapping(&large,10001,
+		&file_tokens[0],&file_tokens[0],65536)==LISA_IORAP_OVERFLOW);
+	assert(large.count==65536 && large.dropped==1);
+	assert(lisa_iorap_state_record_mapping(&large,10001,
+		&file_tokens[1],&file_tokens[0],0)==LISA_IORAP_IGNORED);
+	assert(large.dropped==1);
+	assert(!lisa_iorap_state_end(&large));large.count=0;
+	assert(!lisa_iorap_state_begin(&large,10002));
+	assert(lisa_iorap_state_record_mapping(&large,10002,
+		&file_tokens[0],&file_tokens[0],0)==LISA_IORAP_RECORDED);
+	assert(large.count==1 && !large.dropped);
+	assert(!lisa_iorap_state_end(&large));free(large.events);free(large.seen);
 }
 
 int main(void)
@@ -78,6 +113,7 @@ int main(void)
 	assert(lisa_iorap_state_record(&state, 10002, NULL, 0) == LISA_IORAP_INVALID);
 	assert(state.dropped == ~0UL);
 	assert(lisa_iorap_state_end(&state) == 0);
-	puts("PASS capture core: UID, lifecycle, million mapping duplicates, full-quota duplicate, quota, range, saturation, 4-thread/12000 events");
+	measured_launch_budget();
+	puts("PASS capture core: 51988-page upper-bound workload, bounded 65536 quota, UID, lifecycle, million mapping duplicates, full-quota duplicate, quota, range, saturation, 4-thread/12000 events");
 	return 0;
 }
