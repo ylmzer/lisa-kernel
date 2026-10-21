@@ -10,6 +10,7 @@
 #include <linux/file.h>
 #include <linux/fs.h>
 #include <linux/interrupt.h>
+#include <linux/ratelimit.h>
 #include <linux/jump_label.h>
 #include <linux/jiffies.h>
 #include <linux/workqueue.h>
@@ -66,8 +67,11 @@ static unsigned long capture_deadline;
 static void capture_timeout(struct work_struct *work);
 static DECLARE_DELAYED_WORK(capture_timeout_work, capture_timeout);
 static struct lisa_iorap_event capture_events[LISA_IORAP_MAX_EVENTS];
+static unsigned int capture_seen[LISA_IORAP_MAX_EVENTS * 2];
 static struct lisa_iorap_capture_state capture = {
 	.events = capture_events,
+	.seen = capture_seen,
+	.seen_capacity = ARRAY_SIZE(capture_seen),
 	.capacity = LISA_IORAP_MAX_EVENTS,
 	.max_pages = LISA_IORAP_MAX_PAGES,
 };
@@ -82,8 +86,8 @@ void lisa_iorap_capture_page(struct file *file, pgoff_t index)
 	if (!file || !S_ISREG(file_inode(file)->i_mode))
 		return;
 	spin_lock_irqsave(&capture_lock, flags);
-	result = lisa_iorap_state_record(&capture, __kuid_val(current_uid()),
-					file, index);
+	result = lisa_iorap_state_record_mapping(&capture, __kuid_val(current_uid()),
+					file, file->f_mapping, index);
 	/* The caller holds file alive; finish cannot transfer it before this ref. */
 	if (result == LISA_IORAP_RECORDED)
 		get_file(file);
@@ -252,8 +256,11 @@ struct lisa_iorap_bitmap_snapshot *lisa_iorap_snapshot_bitmap(
 	    __kuid_val(current_euid()) != 1000)
 		return ERR_PTR(-EPERM);
 	/* A truncated capture must not become a seemingly complete bitmap. */
-	if (snapshot->dropped || snapshot->count > LISA_IORAP_MAX_EVENTS)
+	if (snapshot->dropped || snapshot->count > LISA_IORAP_MAX_EVENTS) {
+		pr_warn_ratelimited("lisa_iorap: incomplete capture count=%lu dropped=%lu\n",
+				    snapshot->count, snapshot->dropped);
 		return ERR_PTR(-EOVERFLOW);
+	}
 	result = kvzalloc(sizeof(*result) + LISA_IORAP_MAX_FILES * sizeof(*r),
 			 GFP_KERNEL);
 	if (!result)
