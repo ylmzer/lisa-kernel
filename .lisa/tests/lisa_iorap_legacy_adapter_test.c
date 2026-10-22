@@ -56,10 +56,29 @@ static void kvfree(void *p) { free(p); }
 static void kfree(void *p) { free(p); }
 static void *current_user_ns(void) { return namespace_other?&other_namespace:&init_user_ns; }
 static int current_euid(void) { return euid; }
-static int __kuid_val(int uid) { return uid; }
+static unsigned int __kuid_val(int uid) { return (unsigned int)uid; }
 static int uid_eq(int a,int b) { return a==b; }
 static int ns_capable(void *ns,int cap) { (void)ns;(void)cap;return capability; }
 static int make_kuid(void *ns,unsigned int uid) { (void)ns;return (int)uid; }
+static int capture_control;
+static unsigned long capture_deadline;
+static struct {unsigned int uid; int active;} capture;
+struct task_struct {unsigned int pid,uid; unsigned long long start_time; struct task_struct *group_leader; int refs;};
+static struct task_struct mock_leader={.pid=4455,.uid=10001,.start_time=12345},mock_render={.pid=4456,.uid=10001,.start_time=12346};
+static int mock_tasks_alive=1;
+static struct task_struct *find_get_task_by_vpid(unsigned int pid) {
+ struct task_struct *t=NULL;
+ if(mock_tasks_alive) {if(pid==4455)t=&mock_leader;else if(pid==4456)t=&mock_render;}
+ if(t)t->refs++;
+ return t;
+}
+static unsigned int task_pid_nr(struct task_struct *t){return t->pid;}
+static unsigned int task_tgid_nr(struct task_struct *t){return t->group_leader->pid;}
+static int task_uid(struct task_struct *t){return t->uid;}
+static void put_task_struct(struct task_struct *t){assert(t->refs>0);t->refs--;}
+#define rcu_read_lock() ((void)0)
+#define rcu_read_unlock() ((void)0)
+#define pr_info_ratelimited(...) ((void)0)
 struct inode {int unused;};struct file {int unused;};
 static int nonseekable_open(struct inode *i,struct file *f) {(void)i;(void)f;return 0;}
 static unsigned long copy_from_user(void *to,const void *from,unsigned long bytes)
@@ -77,7 +96,7 @@ struct lisa_iorap_file_bitmap {struct {long tv_sec,tv_nsec;} mtime;
 struct lisa_iorap_bitmap_snapshot {unsigned long files;
  struct lisa_iorap_file_bitmap records[LISA_IORAP_MAX_FILES];};
 static int lisa_iorap_capture_begin(int uid)
-{assert(uid>=0);if(active)return -EBUSY;active=1;return 0;}
+{assert(uid>=0);if(active)return -EBUSY;active=1;capture.active=1;capture.uid=uid;capture_deadline=jiffies+10000;return 0;}
 static int lisa_iorap_capture_abort(void) {active=0;return 0;}
 static struct lisa_iorap_snapshot *lisa_iorap_capture_end(void)
 {
@@ -119,6 +138,7 @@ int main(void)
 {
  unsigned char input[280],size_query[280],small[280];unsigned char *info;
  unsigned int i,enabled;unsigned long bytes;int slot;
+ mock_leader.group_leader=&mock_leader;mock_render.group_leader=&mock_leader;
  assert(!lisa_iorap_legacy_init());assert(!legacy_open(NULL,NULL));
  request(input,10001,4455);euid=2000;assert(call(1,input)==-EPERM);
  euid=0;capability=0;assert(call(1,input)==-EPERM);
@@ -134,6 +154,19 @@ int main(void)
  atomic_store(&capture_transport_owner,0);assert(!call(1,input));
  assert(active && atomic_read(&capture_transport_owner)==2);
  assert(call(1,input)==-EBUSY);
+ /* Real adapter: render attaches without restarting collection or deadline. */
+ request(small,10001,4456);{unsigned long deadline=capture_deadline;
+ assert(!call(1,small));assert(active && capture_deadline==deadline && legacy_active.pid==4455);
+ mock_render.uid=10002;assert(call(1,small)==-EBUSY);mock_render.uid=10001;
+ mock_render.group_leader=&mock_render;assert(call(1,small)==-EBUSY);mock_render.group_leader=&mock_leader;
+ mock_leader.start_time++;assert(call(1,small)==-EBUSY);mock_leader.start_time--;
+ mock_tasks_alive=0;assert(call(1,small)==-EBUSY);mock_tasks_alive=1;
+ request(small,10002,4456);assert(call(1,small)==-EBUSY);
+ request(small,10001,4456);small[8]='x';assert(call(1,small)==-EBUSY);
+ request(small,10001,4456);capture_deadline=jiffies;assert(call(1,small)==-EBUSY);capture_deadline=deadline;
+ atomic_store(&capture_transport_owner,3);assert(call(1,small)==-EBUSY);atomic_store(&capture_transport_owner,2);
+ assert(!mock_leader.refs && !mock_render.refs);
+ }
  /* No release callback: the actual JNI closes its fd after every ioctl. */
  request(size_query,10002,0);assert(call(5,size_query)==-ENOENT);
  assert(active);end_timeout_probe=1;assert(!call(5,input));end_timeout_probe=0;

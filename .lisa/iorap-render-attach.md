@@ -1,0 +1,3 @@
+# Same-process render attachment candidate
+
+Live device trace proves active process15940 and RenderThread17167 have TGID15940/UID10361. A second START may attach only when UID/package match, request is a distinct live thread of the active group leader, and that leader still has its captured start_time (PID reuse rejected). Under capture_control verify owner2, active UID and unexpired original deadline. No capture restart, deadline extension, cache mutation, inter-app merging or fabricated independent collection. Duplicate leader START, different processes/UIDs/packages, dead/reused PID, finishing/diagnostic owner and expired sessions remain EBUSY. Host production adapter exercises these paths with explicit task/capture doubles; actual device acceptance pending.

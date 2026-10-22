@@ -7,6 +7,8 @@
 #include <linux/miscdevice.h>
 #include <linux/uaccess.h>
 #include <linux/user_namespace.h>
+#include <linux/sched/task.h>
+#include <linux/rcupdate.h>
 #endif
 #include "lisa_iorap_legacy_request.h"
 #include "lisa_iorap_legacy_wire.h"
@@ -20,6 +22,7 @@ struct lisa_iorap_legacy_cache {
 };
 static DEFINE_MUTEX(legacy_control);
 static struct lisa_iorap_legacy_request legacy_active;
+static unsigned long long legacy_active_start;
 static struct lisa_iorap_legacy_cache legacy_cache[LISA_IORAP_LEGACY_SLOTS];
 static unsigned long legacy_cache_bytes;
 /* Private test-stage switch. A system daemon cannot enable itself before
@@ -44,6 +47,58 @@ static bool legacy_allowed(void)
 		__kuid_val(current_euid()) == 1000;
 }
 #include "lisa_iorap_rom_pte.h"
+/* Preserve real collection: a render notification may attach only to the
+ * same live process generation, never merely the same package or UID.
+ * legacy_control is held. No deadline extension, ring reset or cache mutation.
+ */
+static unsigned long long legacy_process_start(
+		const struct lisa_iorap_legacy_request *key)
+{
+	struct task_struct *task;
+	unsigned long long start = 0;
+	if (!key->pid)
+		return 0;
+	task = find_get_task_by_vpid(key->pid);
+	if (!task)
+		return 0;
+	rcu_read_lock();
+	if (task_pid_nr(task) == task_tgid_nr(task) &&
+	    __kuid_val(task_uid(task)) == key->uid)
+		start = READ_ONCE(task->start_time);
+	rcu_read_unlock();
+	put_task_struct(task);
+	return start;
+}
+static bool legacy_attach_render(const struct lisa_iorap_legacy_request *key)
+{
+	struct task_struct *leader, *render;
+	bool same = false;
+	if (!legacy_active_start || !key->pid || key->pid == legacy_active.pid ||
+	    !lisa_iorap_legacy_same_app(key, &legacy_active))
+		return false;
+	leader = find_get_task_by_vpid(legacy_active.pid);
+	render = find_get_task_by_vpid(key->pid);
+	if (!leader || !render)
+		goto out;
+	rcu_read_lock();
+	same = leader->group_leader == leader && render->group_leader == leader &&
+		READ_ONCE(leader->start_time) == legacy_active_start &&
+		__kuid_val(task_uid(leader)) == key->uid &&
+		__kuid_val(task_uid(render)) == key->uid;
+	rcu_read_unlock();
+	if (same) {
+		mutex_lock(&capture_control);
+		same = atomic_read(&capture_transport_owner) == 2 && capture.active &&
+			capture.uid == key->uid && time_before(jiffies, capture_deadline);
+		mutex_unlock(&capture_control);
+	}
+out:
+	if (leader)
+		put_task_struct(leader);
+	if (render)
+		put_task_struct(render);
+	return same;
+}
 static int legacy_open(struct inode *inode, struct file *file)
 {
 	if (!legacy_allowed())
@@ -259,6 +314,12 @@ static long legacy_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	switch (op) {
 	case LISA_IORAP_LEGACY_START:
 		if (atomic_cmpxchg(&capture_transport_owner, 0, 2)) {
+			if (legacy_attach_render(&key)) {
+				pr_info_ratelimited("lisa_iorap: render attached uid=%u pid=%u tid=%u\n",
+					key.uid, legacy_active.pid, key.pid);
+				error = 0;
+				break;
+			}
 			pr_warn_ratelimited("lisa_iorap: start busy owner=%d same_app=%u active_uid=%u active_pid=%u request_uid=%u request_pid=%u\n",
 				atomic_read(&capture_transport_owner),
 				!!lisa_iorap_legacy_same_app(&key, &legacy_active),
@@ -267,6 +328,7 @@ static long legacy_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			break;
 		}
 		legacy_active = key;
+		legacy_active_start = legacy_process_start(&key);
 		error = lisa_iorap_capture_begin(make_kuid(&init_user_ns, key.uid));
 		if (error)
 			atomic_cmpxchg(&capture_transport_owner, 2, 0);
