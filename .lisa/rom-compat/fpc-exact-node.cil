@@ -1,0 +1,8 @@
+
+; Exact FPC control node; do not grant the daemon access to generic wakeup sysfs.
+(type vendor_fpc_wakeup_enable)
+(roletype object_r vendor_fpc_wakeup_enable)
+(typeattributeset fs_type (vendor_fpc_wakeup_enable))
+(typeattributeset sysfs_type (vendor_fpc_wakeup_enable))
+(genfscon sysfs "/devices/platform/soc/soc:fingerprint_fpc/wakeup_enable" (u object_r vendor_fpc_wakeup_enable ((s0) (s0))))
+(allow vendor_mfp-daemon vendor_fpc_wakeup_enable (file (getattr open write)))

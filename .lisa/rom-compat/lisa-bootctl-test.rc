@@ -1,0 +1,9 @@
+service lisa-bootctl-test /vendor/bin/lisa-bootctl-probe --mark-success
+    class late_start
+    user root
+    group root
+    disabled
+    oneshot
+
+on property:sys.boot_completed=1
+    start lisa-bootctl-test
