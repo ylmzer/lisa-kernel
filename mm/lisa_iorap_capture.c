@@ -317,6 +317,8 @@ struct lisa_iorap_bitmap_snapshot *lisa_iorap_snapshot_bitmap(
 				goto fail;
 			}
 			if (path[0] != '/' || d_unlinked(file->f_path.dentry)) {
+				pr_warn_ratelimited("lisa_iorap: stale stage=path file=%lu inode=%llu fs=%s path=%s\n",
+						    j, r->inode_number, inode->i_sb->s_type->name, path);
 				error = -ESTALE;
 				goto fail;
 			}
@@ -334,6 +336,8 @@ struct lisa_iorap_bitmap_snapshot *lisa_iorap_snapshot_bitmap(
 		marked = lisa_iorap_bitmap_mark(r->bitmap, r->words, r->bits,
 					      snapshot->events[i].index);
 		if (marked < 0) {
+			pr_warn_ratelimited("lisa_iorap: stale stage=index file=%lu inode=%llu index=%lu bits=%lu path=%s\n",
+					    j, r->inode_number, (unsigned long)snapshot->events[i].index, r->bits, r->path);
 			error = -ESTALE;
 			goto fail;
 		}
@@ -354,6 +358,9 @@ struct lisa_iorap_bitmap_snapshot *lisa_iorap_snapshot_bitmap(
 			error = -ESTALE;
 		inode_unlock(inode);
 		if (error || d_unlinked(keys[j]->f_path.dentry)) {
+			pr_warn_ratelimited("lisa_iorap: stale stage=final file=%lu inode=%llu metadata_changed=%u unlinked=%u path=%s\n",
+					    j, r->inode_number, !!error,
+					    !!d_unlinked(keys[j]->f_path.dentry), r->path);
 			error = -ESTALE;
 			goto fail;
 		}
