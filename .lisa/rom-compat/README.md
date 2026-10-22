@@ -9,3 +9,9 @@ Dedicated init oneshot HAL client: genuine HIDL1.1 connected on slot0 (_a), boot
 IORAP source135f8882c: actual X cold-launch capture498files/53731events, 13 already-unlinked events explicitly excluded; next cold launch iorapd reported file_sequential preread success498files/206M/341ms. This is not a physical-disk IO or speedup measurement. Android Enforcing and iorapd PID remained stable in this short test. Mutable Crashlytics userlog can still reject recapture with ESTALE; repeated render COLLECT EBUSY, PTE and long-term stability remain open.
 
 Verified kernel config matches CI39631762622 byte-for-byte, all Module.symvers CRCs unchanged, TEST=n, no diagnostic endpoint, required symbols and ZIP/SHA manifests verified. Local binary differs from CI and is not claimed reproducible. Image SHA256935332e0a4604595802f61c3db394ff16c55ff2ac3d9c3bb34ffb7d4d77ee438; installed boot2cf9e27c9fc99b98f5d5c768aa0e7b1901dcbc2daddc6d15f6d1fa498d510e4b; vendor48953ad12b5572abf2b5e5a36b898320956fbb2ea8cd677bca52d6e129eec2de.
+
+## Writable-input kernel788589186: 2026-10-23 device test
+
+Three actual X COLD starts produced valid snapshots444/440/440files,52008/51124/51894events. Explicit writable-event counts1308/974/1122; already-unlinked149/13/22. No STOP ESTALE or quota error in this window. Next launches: genuine iorapd file preread444files/197M/299ms and440files/195M/242ms. Not physical-disk IO or performance proof. Enforcing; iorapd PID2159 unchanged. HAL1.1 actualmark/readback passed again, successful_before1 persisted from preceding boot.
+
+Remaining repeated COLLECT EBUSY diagnosed with live procfs: active PID15940 TGID15940 UID10361, requested TID17167 namedRenderThread TGID15940 UID10361. Same-process render notification collides with existing collection; no lifecycle fix included in788589186. PTE and long-term stability remain pending.
