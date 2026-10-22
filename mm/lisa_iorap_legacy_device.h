@@ -259,6 +259,10 @@ static long legacy_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	switch (op) {
 	case LISA_IORAP_LEGACY_START:
 		if (atomic_cmpxchg(&capture_transport_owner, 0, 2)) {
+			pr_warn_ratelimited("lisa_iorap: start busy owner=%d same_app=%u active_uid=%u active_pid=%u request_uid=%u request_pid=%u\n",
+				atomic_read(&capture_transport_owner),
+				!!lisa_iorap_legacy_same_app(&key, &legacy_active),
+				legacy_active.uid, legacy_active.pid, key.uid, key.pid);
 			error = -EBUSY;
 			break;
 		}

@@ -109,6 +109,7 @@ static struct lisa_iorap_bitmap_snapshot *lisa_iorap_snapshot_bitmap(struct lisa
 }
 static void lisa_iorap_bitmap_put(struct lisa_iorap_bitmap_snapshot *s)
 {unsigned long i;for(i=0;i<s->files;i++)free(s->records[i].bitmap);free(s);}
+#define pr_warn_ratelimited(...) ((void)0)
 #include "../../mm/lisa_iorap_legacy_device.h"
 static void request(unsigned char *data,unsigned int uid,unsigned int pid)
 {memset(data,0,280);lisa_iorap_wire_u32(data,uid);lisa_iorap_wire_u32(data+4,pid);memcpy(data+8,"com.test.fixture",17);}

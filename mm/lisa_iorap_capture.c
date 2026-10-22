@@ -248,6 +248,7 @@ struct lisa_iorap_bitmap_snapshot *lisa_iorap_snapshot_bitmap(
 	struct inode *inode;
 	struct file *file;
 	unsigned long i, j, words, bitmap_bytes = 0, excluded_unlinked_events = 0;
+	unsigned long excluded_writable_events = 0;
 	char *path;
 	int error = 0, marked;
 
@@ -284,6 +285,17 @@ struct lisa_iorap_bitmap_snapshot *lisa_iorap_snapshot_bitmap(
 			continue;
 		}
 		inode = file_inode(file);
+		/* Only stable read inputs belong in a replay record. A captured
+		 * writable handle remains identifiable even after its user closes it;
+		 * i_writecount also covers separate writer handles to the same inode.
+		 * This is input classification, never acceptance of changed metadata.
+		 * A writer appearing after acceptance still fails final validation.
+		 */
+		if ((file->f_mode & FMODE_WRITE) ||
+		    atomic_read(&inode->i_writecount) > 0) {
+			excluded_writable_events++;
+			continue;
+		}
 		for (j = 0; j < result->files; j++)
 			if (file_inode(keys[j]) == inode &&
 			    keys[j]->f_path.mnt == file->f_path.mnt)
@@ -354,7 +366,7 @@ struct lisa_iorap_bitmap_snapshot *lisa_iorap_snapshot_bitmap(
 		if (!(i & 255))
 			cond_resched();
 	}
-	if (!result->files && excluded_unlinked_events) {
+	if (!result->files && (excluded_unlinked_events || excluded_writable_events)) {
 		error = -ENODATA;
 		goto fail;
 	}
@@ -378,8 +390,9 @@ struct lisa_iorap_bitmap_snapshot *lisa_iorap_snapshot_bitmap(
 			goto fail;
 		}
 	}
-	pr_info_ratelimited("lisa_iorap: snapshot files=%lu events=%lu bitmap_bytes=%lu excluded_unlinked_events=%lu\n",
-			    result->files, snapshot->count, bitmap_bytes, excluded_unlinked_events);
+	pr_info_ratelimited("lisa_iorap: snapshot files=%lu events=%lu bitmap_bytes=%lu excluded_unlinked_events=%lu excluded_writable_events=%lu\n",
+			    result->files, snapshot->count, bitmap_bytes, excluded_unlinked_events,
+			    excluded_writable_events);
 	kvfree(keys);
 	return result;
 fail:
