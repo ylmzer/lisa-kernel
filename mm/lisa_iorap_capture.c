@@ -25,10 +25,11 @@
 #include <linux/vmalloc.h>
 #include "lisa_iorap_capture_core.h"
 #include "lisa_iorap_bitmap_core.h"
+#include "lisa_iorap_snapshot_budget.h"
 
 #define LISA_IORAP_MAX_EVENTS 65536 /* Measured cold launch: 51988 callbacks. */
 #define LISA_IORAP_MAX_PAGES (1UL << 19) /* Limit a recorded file to 2 GiB at 4K. */
-#define LISA_IORAP_MAX_FILES 64
+#define LISA_IORAP_MAX_FILES LISA_IORAP_SNAPSHOT_MAX_FILES
 
 struct lisa_iorap_file_bitmap {
 	unsigned long long inode_number;
@@ -242,11 +243,11 @@ struct lisa_iorap_bitmap_snapshot *lisa_iorap_snapshot_bitmap(
 		const struct lisa_iorap_snapshot *snapshot)
 {
 	struct lisa_iorap_bitmap_snapshot *result;
-	struct file *keys[LISA_IORAP_MAX_FILES];
+	struct file **keys = NULL;
 	struct lisa_iorap_file_bitmap *r;
 	struct inode *inode;
 	struct file *file;
-	unsigned long i, j, words;
+	unsigned long i, j, words, bitmap_bytes = 0;
 	char *path;
 	int error = 0, marked;
 
@@ -265,6 +266,11 @@ struct lisa_iorap_bitmap_snapshot *lisa_iorap_snapshot_bitmap(
 			 GFP_KERNEL);
 	if (!result)
 		return ERR_PTR(-ENOMEM);
+	keys = kvcalloc(LISA_IORAP_MAX_FILES, sizeof(*keys), GFP_KERNEL);
+	if (!keys) {
+		error = -ENOMEM;
+		goto fail;
+	}
 	result->uid = snapshot->uid;
 	for (i = 0; i < snapshot->count; i++) {
 		file = snapshot->events[i].file;
@@ -296,6 +302,12 @@ struct lisa_iorap_bitmap_snapshot *lisa_iorap_snapshot_bitmap(
 			r->bits = DIV_ROUND_UP_ULL(r->file_bytes, PAGE_SIZE);
 			if (lisa_iorap_bitmap_words(r->bits, &words)) {
 				error = -ERANGE;
+				goto fail;
+			}
+			if (lisa_iorap_snapshot_reserve(result->files, &bitmap_bytes, words)) {
+				pr_warn_ratelimited("lisa_iorap: bitmap budget files=%lu bytes=%lu words=%lu\n",
+						    result->files, bitmap_bytes, words);
+				error = -E2BIG;
 				goto fail;
 			}
 			r->words = words;
@@ -346,8 +358,12 @@ struct lisa_iorap_bitmap_snapshot *lisa_iorap_snapshot_bitmap(
 			goto fail;
 		}
 	}
+	pr_info_ratelimited("lisa_iorap: snapshot files=%lu events=%lu bitmap_bytes=%lu\n",
+			    result->files, snapshot->count, bitmap_bytes);
+	kvfree(keys);
 	return result;
 fail:
+	kvfree(keys);
 	lisa_iorap_bitmap_put(result);
 	return ERR_PTR(error);
 }

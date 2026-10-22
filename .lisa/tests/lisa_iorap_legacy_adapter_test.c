@@ -16,7 +16,8 @@
 #define CONFIG_LISA_IORAP_LEGACY 1
 #define CONFIG_LISA_IORAP_TEST 1
 #define LISA_IORAP_LEGACY_HOST_TEST 1
-#define LISA_IORAP_MAX_FILES 64
+#include "../../mm/lisa_iorap_snapshot_budget.h"
+#define LISA_IORAP_MAX_FILES LISA_IORAP_SNAPSHOT_MAX_FILES
 #define __user
 #define __init
 #define THIS_MODULE NULL
@@ -158,6 +159,18 @@ int main(void)
  enabled=1;assert(!legacy_ioctl(NULL,LISA_IORAP_NATIVE_SWITCH,(unsigned long)&enabled));
  assert(legacy_ioctl(NULL,0x80044c14U,0)==-ENOTTY);
  assert(call(17,input)==-ENOTTY && call(18,input)==-ENOTTY);
+ /* Real transport accepts more than 64 records, with a bounded payload. */
+ for (i=0;i<4;i++) {
+  unsigned long records=((unsigned long[]){65,128,256,1024})[i];
+  mock_files=records;mock_bits=64;
+  request(input,12000+records,77);assert(!call(1,input));assert(!call(5,input));
+  request(size_query,12000+records,0);assert(!call(7,size_query));
+  bytes=(unsigned long)le64toh(*(__le64 *)(size_query+264));
+  assert(bytes==280+records*(296+8));
+  info=malloc(bytes);assert(info);memcpy(info,size_query,264);
+  lisa_iorap_wire_u64(info+272,bytes);assert(!call(8,info));
+  assert(lisa_iorap_legacy_u32(info+264)==records);free(info);
+ }
  /* Exercise byte-budget eviction while empty slots still exist. */
  mock_files=64;mock_bits=524288;
  for(i=0;i<7;i++){

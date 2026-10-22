@@ -5,10 +5,11 @@
 #ifndef LISA_IORAP_LEGACY_WIRE_H
 #define LISA_IORAP_LEGACY_WIRE_H
 #include "lisa_iorap_bitmap_core.h"
+#include "lisa_iorap_snapshot_budget.h"
 #define LISA_IORAP_WIRE_HEADER 280UL
 #define LISA_IORAP_WIRE_RECORD 296UL
 #define LISA_IORAP_WIRE_MAX (10UL * 1024 * 1024)
-#define LISA_IORAP_WIRE_MAX_RECORDS 64UL
+#define LISA_IORAP_WIRE_MAX_RECORDS LISA_IORAP_SNAPSHOT_MAX_FILES
 
 struct lisa_iorap_wire_view {
 	unsigned long long metadata[4];
@@ -39,6 +40,7 @@ static inline int lisa_iorap_wire_size(const struct lisa_iorap_wire_view *record
 		unsigned long count, unsigned long *required)
 {
 	unsigned long i, j, words, n = LISA_IORAP_WIRE_HEADER, record_size;
+	unsigned long bitmap_bytes = 0;
 	const struct lisa_iorap_wire_view *r;
 
 	if (!required || count > LISA_IORAP_WIRE_MAX_RECORDS || (count && !records))
@@ -56,6 +58,8 @@ static inline int lisa_iorap_wire_size(const struct lisa_iorap_wire_view *record
 		for (j = 0; j < r->path_bytes; j++)
 			if (!r->path[j])
 				return -1;
+		if (lisa_iorap_snapshot_reserve(i, &bitmap_bytes, words))
+			return -2;
 		record_size = LISA_IORAP_WIRE_RECORD + words * 8;
 		if (record_size > LISA_IORAP_WIRE_MAX - n)
 			return -2;
