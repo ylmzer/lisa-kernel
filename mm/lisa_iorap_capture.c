@@ -247,7 +247,7 @@ struct lisa_iorap_bitmap_snapshot *lisa_iorap_snapshot_bitmap(
 	struct lisa_iorap_file_bitmap *r;
 	struct inode *inode;
 	struct file *file;
-	unsigned long i, j, words, bitmap_bytes = 0;
+	unsigned long i, j, words, bitmap_bytes = 0, excluded_unlinked_events = 0;
 	char *path;
 	int error = 0, marked;
 
@@ -274,6 +274,15 @@ struct lisa_iorap_bitmap_snapshot *lisa_iorap_snapshot_bitmap(
 	result->uid = snapshot->uid;
 	for (i = 0; i < snapshot->count; i++) {
 		file = snapshot->events[i].file;
+		/* An already unlinked file cannot be reopened for file preread.
+		 * Exclude this ineligible event before creating any record. If a
+		 * previously accepted file is unlinked later, final validation still
+		 * rejects the whole snapshot. Quota overflow remains a hard error.
+		 */
+		if (d_unlinked(file->f_path.dentry)) {
+			excluded_unlinked_events++;
+			continue;
+		}
 		inode = file_inode(file);
 		for (j = 0; j < result->files; j++)
 			if (file_inode(keys[j]) == inode &&
@@ -345,6 +354,10 @@ struct lisa_iorap_bitmap_snapshot *lisa_iorap_snapshot_bitmap(
 		if (!(i & 255))
 			cond_resched();
 	}
+	if (!result->files && excluded_unlinked_events) {
+		error = -ENODATA;
+		goto fail;
+	}
 	/* Detect truncation or modification during consolidation. Pinned files in
 	 * the raw snapshot keep every inode alive; keys never escape this function.
 	 */
@@ -365,8 +378,8 @@ struct lisa_iorap_bitmap_snapshot *lisa_iorap_snapshot_bitmap(
 			goto fail;
 		}
 	}
-	pr_info_ratelimited("lisa_iorap: snapshot files=%lu events=%lu bitmap_bytes=%lu\n",
-			    result->files, snapshot->count, bitmap_bytes);
+	pr_info_ratelimited("lisa_iorap: snapshot files=%lu events=%lu bitmap_bytes=%lu excluded_unlinked_events=%lu\n",
+			    result->files, snapshot->count, bitmap_bytes, excluded_unlinked_events);
 	kvfree(keys);
 	return result;
 fail:
