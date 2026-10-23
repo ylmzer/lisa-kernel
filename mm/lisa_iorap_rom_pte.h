@@ -254,7 +254,9 @@ static int lisa_iorap_pte_preread(const struct lisa_iorap_legacy_request *key)
 	struct task_struct *task;
 	struct mm_struct *mm;
 	struct iorap_pte_plan *plan = NULL;
-	unsigned long flags, first, end, addr, deadline;
+	unsigned long flags, first, end, addr, deadline, advised_ranges = 0;
+	DECLARE_BITMAP(eligible, IORAP_PTE_CHUNKS);
+	unsigned int selected = 0, skipped = 0;
 	unsigned int i;
 	int error = pte_task_mm(key, &task, &mm);
 	if (error)
@@ -281,8 +283,50 @@ static int lisa_iorap_pte_preread(const struct lisa_iorap_legacy_request *key)
 	pte_running = true;
 	spin_unlock_irqrestore(&pte_active_lock, flags);
 	deadline = jiffies + msecs_to_jiffies(500);
+	/* Classify stale input before advising any range. A changed mapping is
+	 * never touched. Included chunks still face the exact identity check
+	 * immediately before EVERY advice, so a later change remains an error.
+	 */
+	bitmap_zero(eligible, IORAP_PTE_CHUNKS);
+	for (i = 0; i < plan->count; i++) {
+		struct iorap_pte_chunk *chunk = &plan->chunks[i];
+		struct vm_area_struct *vma;
+		bool valid;
+		if (atomic_read(&pte_cancel) || fatal_signal_pending(current)) {
+			error = -EINTR;
+			goto running_out;
+		}
+		if (time_after_eq(jiffies, deadline)) {
+			error = -ETIMEDOUT;
+			goto running_out;
+		}
+		first = find_first_bit(chunk->bits, PTRS_PER_PTE);
+		addr = chunk->base + (first << PAGE_SHIFT);
+		down_read(&mm->mmap_sem);
+		vma = find_vma(mm, addr);
+		valid = vma && lisa_iorap_pte_vma_covers(chunk->vma_start,
+			chunk->vma_end, vma->vm_start, vma->vm_end,
+			vma->anon_vma == chunk->anon, !!vma->vm_file,
+			!!(vma->vm_flags & VM_READ));
+		up_read(&mm->mmap_sem);
+		if (valid) {
+			__set_bit(i, eligible);
+			selected++;
+		} else {
+			skipped++;
+		}
+		cond_resched();
+	}
+	if (!selected) {
+		pr_warn_ratelimited("lisa_iorap: pte no eligible input uid=%u pid=%u skipped=%u\n",
+			key->uid, key->pid, skipped);
+		error = -ESTALE;
+		goto running_out;
+	}
 	for (i = 0; i < plan->count && !error; i++) {
 		struct iorap_pte_chunk *chunk = &plan->chunks[i];
+		if (!test_bit(i, eligible))
+			continue;
 		first = find_first_bit(chunk->bits, PTRS_PER_PTE);
 		while (first < PTRS_PER_PTE) {
 			struct vm_area_struct *vma;
@@ -320,17 +364,21 @@ static int lisa_iorap_pte_preread(const struct lisa_iorap_legacy_request *key)
 			}
 			up_read(&mm->mmap_sem);
 			if (error) break;
+			advised_ranges++;
 			first = find_next_bit(chunk->bits, PTRS_PER_PTE, end);
 			cond_resched();
 		}
 	}
+running_out:
+	if (!error && !advised_ranges)
+		error = -ENODATA;
 	spin_lock_irqsave(&pte_active_lock, flags);
 	pte_running = false;
 	spin_unlock_irqrestore(&pte_active_lock, flags);
 	plan->used = jiffies;
 	if (!error)
-		pr_info_ratelimited("lisa_iorap: pte preread completed uid=%u pid=%u chunks=%u pages=%lu\n",
-			key->uid, key->pid, plan->count, plan->pages);
+		pr_info_ratelimited("lisa_iorap: pte verified-subset advice uid=%u pid=%u selected_chunks=%u excluded_stale_chunks=%u advised_ranges=%lu\n",
+			key->uid, key->pid, selected, skipped, advised_ranges);
 out:
 	mutex_unlock(&pte_control);
 	mmput(mm);

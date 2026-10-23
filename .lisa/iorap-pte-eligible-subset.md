@@ -1,0 +1,5 @@
+# PTE verified-subset advice candidate (runtime acceptance pending)
+
+Actual fef3d5b3a samePID15328 HOT rejection: chunk417 changed start/end/anon and became unreadable. Those addresses must never be advised with the old identity. Before ANY advice, classify every recorded chunk under mmap_sem using the unchanged original-range/mm/anon/file/readability guards. Omit stale inputs with explicit excluded_stale_chunks; zero eligible inputs still ESTALE. The replay loop rechecks every included range before advice and keeps late identity changes as hard errors. No mm/UID/anon lifetime, permission, quota, cancellation or advice error guard is removed.
+
+A successful verified-subset operation means actual anon advice ran only for eligible ranges, not completion of the original full plan. Log selected/excluded chunks and successful advised ranges; never label these swapped-in pages, checksum validation or full-plan success. Native result0 is scoped to the valid selected subset, which is a behavior change requiring device acceptance and owned-fixture mincore/checksum testing. Whole-app PTE acceptance is still open.
