@@ -19,3 +19,7 @@ Remaining repeated COLLECT EBUSY diagnosed with live procfs: active PID15940 TGI
 ## Render-attachment kernelfcf62b238 device acceptance
 
 2026-10-23: three X COLD launches all logged verified same-process render attachment, snapshots439/438/445files and51634/52125/52421events. No render EBUSY or STOP ESTALE in this window. Genuine file prereads439files197M373ms and438files199M435ms. Enforcing and iorapd PID2266 stable; actual HAL1.1mark/readback passed again. This is not physical IO/performance proof. SamePID16798 HOT resume exposed a separate IOCTL_Pte_Preread ESTALE (errno116); PTE identity guards remain intact and unresolved. Long-term stability pending.
+
+## PTE diagnostic6f45f1369 device result
+
+2026-10-23: actual samePID15460 HOT resume rejected at stage=vma chunk669: missing0/start_changed0/end_changed1/anon_changed0/file0/unreadable0. Snapshot1162chunks48721pages. End direction not recorded; growth vs shrink not established. Enforcing iorapd2066, HALmark/readback passed. Cold snapshots436/443files passed but one of two render notifications again returned EBUSY; earlier3-start success is not universal acceptance. No guard was changed in diagnostic6f. PTE and intermittent startup render attachment still need fixes.
