@@ -209,6 +209,8 @@ static int lisa_iorap_pte_snapshot(const struct lisa_iorap_legacy_request *key)
 	}
 	pte_plan_put(pte_plans[slot]);
 	pte_plans[slot] = plan;
+	pr_info_ratelimited("lisa_iorap: pte snapshot uid=%u pid=%u chunks=%u pages=%lu\n",
+		key->uid, key->pid, plan->count, plan->pages);
 	plan = NULL;
 plan:
 	pte_plan_put(plan);
@@ -262,8 +264,16 @@ static int lisa_iorap_pte_preread(const struct lisa_iorap_legacy_request *key)
 			plan = pte_plans[i];
 			break;
 		}
-	if (!plan) { error = -ENOENT; goto out; }
-	if (plan->mm != mm) { error = -ESTALE; goto out; }
+	if (!plan) {
+		pr_warn_ratelimited("lisa_iorap: pte reject stage=missing uid=%u pid=%u\n",
+			key->uid, key->pid);
+		error = -ENOENT; goto out;
+	}
+	if (plan->mm != mm) {
+		pr_warn_ratelimited("lisa_iorap: pte reject stage=mm uid=%u pid=%u chunks=%u pages=%lu\n",
+			key->uid, key->pid, plan->count, plan->pages);
+		error = -ESTALE; goto out;
+	}
 	spin_lock_irqsave(&pte_active_lock, flags);
 	pte_active_key = *key;
 	atomic_set(&pte_cancel, 0);
@@ -288,11 +298,22 @@ static int lisa_iorap_pte_preread(const struct lisa_iorap_legacy_request *key)
 			vma = find_vma(mm, addr);
 			if (!vma || vma->vm_start != chunk->vma_start ||
 			    vma->vm_end != chunk->vma_end || vma->anon_vma != chunk->anon ||
-			    vma->vm_file || !(vma->vm_flags & VM_READ))
+			    vma->vm_file || !(vma->vm_flags & VM_READ)) {
+				pr_warn_ratelimited("lisa_iorap: pte reject stage=vma uid=%u pid=%u chunk=%u missing=%u start_changed=%u end_changed=%u anon_changed=%u file=%u unreadable=%u\n",
+					key->uid, key->pid, i, !vma,
+					!!(vma && vma->vm_start != chunk->vma_start),
+					!!(vma && vma->vm_end != chunk->vma_end),
+					!!(vma && vma->anon_vma != chunk->anon),
+					!!(vma && vma->vm_file),
+					!!(vma && !(vma->vm_flags & VM_READ)));
 				error = -ESTALE;
-			else
+			} else {
 				error = lisa_iorap_anon_willneed(vma, addr,
 					chunk->base + (end << PAGE_SHIFT));
+				if (error)
+					pr_warn_ratelimited("lisa_iorap: pte reject stage=advice uid=%u pid=%u chunk=%u error=%d\n",
+						key->uid, key->pid, i, error);
+			}
 			up_read(&mm->mmap_sem);
 			if (error) break;
 			first = find_next_bit(chunk->bits, PTRS_PER_PTE, end);
@@ -303,6 +324,9 @@ static int lisa_iorap_pte_preread(const struct lisa_iorap_legacy_request *key)
 	pte_running = false;
 	spin_unlock_irqrestore(&pte_active_lock, flags);
 	plan->used = jiffies;
+	if (!error)
+		pr_info_ratelimited("lisa_iorap: pte preread completed uid=%u pid=%u chunks=%u pages=%lu\n",
+			key->uid, key->pid, plan->count, plan->pages);
 out:
 	mutex_unlock(&pte_control);
 	mmput(mm);

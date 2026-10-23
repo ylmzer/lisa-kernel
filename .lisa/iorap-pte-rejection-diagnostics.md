@@ -1,0 +1,3 @@
+# PTE rejection diagnostics only
+
+Actual same-process HOT X resume on fcf62b238 returned errno116. Add rate-limited stage=missing/mm/vma/advice diagnostics plus snapshot and completed-operation counters to distinguish absent plan, changed mm, VMA bounds/anon/file/readability and anon advice errors. No raw pointers or virtual addresses emitted. UID/PID and boolean mismatch reasons only. No condition, return value, quota, timeout, cancellation, memory identity or lifetime rule changed. Completed pages counts describe the plan, not swapped-in physical pages or a checksum; no fake swap-in acceptance. Device reproduction pending, not a PTE fix.
