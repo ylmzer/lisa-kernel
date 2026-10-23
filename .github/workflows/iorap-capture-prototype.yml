@@ -1,7 +1,5 @@
 name: Validate experimental iorap capture foundation
 on:
-  push:
-    branches: [codex/iorap-capture-20261020]
   workflow_dispatch:
     inputs:
       build_image:
