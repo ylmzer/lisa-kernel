@@ -62,9 +62,14 @@ static unsigned long long legacy_process_start(
 	if (!task)
 		return 0;
 	rcu_read_lock();
-	if (task_pid_nr(task) == task_tgid_nr(task) &&
-	    __kuid_val(task_uid(task)) == key->uid)
+	/* Sampling generation is not authorization. A forked app may still
+	 * carry zygote credentials here; attachment rechecks BOTH live UIDs.
+	 */
+	if (task_pid_nr(task) == task_tgid_nr(task))
 		start = READ_ONCE(task->start_time);
+	pr_info_ratelimited("lisa_iorap: start identity uid=%u pid=%u leader=%u uid_match=%u generation=%u\n",
+		key->uid, key->pid, task_pid_nr(task) == task_tgid_nr(task),
+		__kuid_val(task_uid(task)) == key->uid, !!start);
 	rcu_read_unlock();
 	put_task_struct(task);
 	return start;

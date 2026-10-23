@@ -140,6 +140,11 @@ int main(void)
  unsigned int i,enabled;unsigned long bytes;int slot;
  mock_leader.group_leader=&mock_leader;mock_render.group_leader=&mock_leader;
  assert(!lisa_iorap_legacy_init());assert(!legacy_open(NULL,NULL));
+ /* Zygote UID at generation sample does not authorize attachment. */
+ request(input,10001,4455);mock_leader.uid=0;euid=0;
+ assert(!call(1,input));request(small,10001,4456);
+ assert(call(1,small)==-EBUSY);mock_leader.uid=10001;
+ assert(!call(1,small));assert(!call(6,input));
  request(input,10001,4455);euid=2000;assert(call(1,input)==-EPERM);
  euid=0;capability=0;assert(call(1,input)==-EPERM);
  euid=1000;assert(legacy_open(NULL,NULL)==-EAGAIN);

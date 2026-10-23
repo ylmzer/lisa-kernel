@@ -1,0 +1,5 @@
+# PTE original-range coverage and startup generation candidate
+
+Actual warm X rejection: mm lookup succeeded, same anon identity/start/file/readability; VMA end changed. Permit only monotonic end growth preserving the full old VMA, under existing mmap_sem, same mm/anon/start, non-file readable checks. Shrink and every identity mismatch still ESTALE; no fresh snapshot fabricated or arbitrary remapped range advised. Record growth/shrink reasons on rejection. Device direction was not measured, so this candidate may still reject if the observed change was shrink. Not runtime accepted.
+
+Intermittent render EBUSY remains in diagnostic run. Sample live leader generation even before app UID transition; this is identity capture only, not permission. At attach, both live UIDs/package/process generation/group must still match and active unexpired capture required. Host adapter tests root-generation sample rejecting attachment until live app credentials match. Logs report startup UID match and generation presence, no pointers. Runtime confirmation pending.

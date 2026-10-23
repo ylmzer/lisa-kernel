@@ -4,6 +4,7 @@
  */
 #ifdef CONFIG_LISA_IORAP_ROM_PTE
 #include <linux/bitmap.h>
+#include "lisa_iorap_pte_identity.h"
 #include <linux/huge_mm.h>
 #include <linux/hugetlb.h>
 #include <linux/pagewalk.h>
@@ -296,13 +297,16 @@ static int lisa_iorap_pte_preread(const struct lisa_iorap_legacy_request *key)
 			addr = chunk->base + (first << PAGE_SHIFT);
 			down_read(&mm->mmap_sem);
 			vma = find_vma(mm, addr);
-			if (!vma || vma->vm_start != chunk->vma_start ||
-			    vma->vm_end != chunk->vma_end || vma->anon_vma != chunk->anon ||
-			    vma->vm_file || !(vma->vm_flags & VM_READ)) {
-				pr_warn_ratelimited("lisa_iorap: pte reject stage=vma uid=%u pid=%u chunk=%u missing=%u start_changed=%u end_changed=%u anon_changed=%u file=%u unreadable=%u\n",
+			if (!vma || !lisa_iorap_pte_vma_covers(chunk->vma_start,
+			    chunk->vma_end, vma->vm_start, vma->vm_end,
+			    vma->anon_vma == chunk->anon, !!vma->vm_file,
+			    !!(vma->vm_flags & VM_READ))) {
+				pr_warn_ratelimited("lisa_iorap: pte reject stage=vma uid=%u pid=%u chunk=%u missing=%u start_changed=%u end_changed=%u end_grew=%u end_shrank=%u anon_changed=%u file=%u unreadable=%u\n",
 					key->uid, key->pid, i, !vma,
 					!!(vma && vma->vm_start != chunk->vma_start),
 					!!(vma && vma->vm_end != chunk->vma_end),
+					!!(vma && vma->vm_end > chunk->vma_end),
+					!!(vma && vma->vm_end < chunk->vma_end),
 					!!(vma && vma->anon_vma != chunk->anon),
 					!!(vma && vma->vm_file),
 					!!(vma && !(vma->vm_flags & VM_READ)));
