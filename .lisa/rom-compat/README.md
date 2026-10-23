@@ -15,3 +15,7 @@ Verified kernel config matches CI39631762622 byte-for-byte, all Module.symvers C
 Three actual X COLD starts produced valid snapshots444/440/440files,52008/51124/51894events. Explicit writable-event counts1308/974/1122; already-unlinked149/13/22. No STOP ESTALE or quota error in this window. Next launches: genuine iorapd file preread444files/197M/299ms and440files/195M/242ms. Not physical-disk IO or performance proof. Enforcing; iorapd PID2159 unchanged. HAL1.1 actualmark/readback passed again, successful_before1 persisted from preceding boot.
 
 Remaining repeated COLLECT EBUSY diagnosed with live procfs: active PID15940 TGID15940 UID10361, requested TID17167 namedRenderThread TGID15940 UID10361. Same-process render notification collides with existing collection; no lifecycle fix included in788589186. PTE and long-term stability remain pending.
+
+## Render-attachment kernelfcf62b238 device acceptance
+
+2026-10-23: three X COLD launches all logged verified same-process render attachment, snapshots439/438/445files and51634/52125/52421events. No render EBUSY or STOP ESTALE in this window. Genuine file prereads439files197M373ms and438files199M435ms. Enforcing and iorapd PID2266 stable; actual HAL1.1mark/readback passed again. This is not physical IO/performance proof. SamePID16798 HOT resume exposed a separate IOCTL_Pte_Preread ESTALE (errno116); PTE identity guards remain intact and unresolved. Long-term stability pending.
