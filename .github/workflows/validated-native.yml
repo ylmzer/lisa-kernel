@@ -1,0 +1,44 @@
+name: Build validated Lisa native profile
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Audit the pinned profile or build its kernel Image
+        type: choice
+        options: [config-only, build]
+        default: config-only
+permissions:
+  contents: read
+jobs:
+  validated-native:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Install exact reference build packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          python3 -c 'import json; p=json.load(open(".lisa/profiles/native-20261023/manifest.json")); print("\n".join(k+"="+v for k,v in p["packages"].items()))' > /tmp/lisa-reference-packages.txt
+          mapfile -t packages < /tmp/lisa-reference-packages.txt
+          test "${#packages[@]}" -gt 0
+          sudo apt-get install -y --allow-downgrades "${packages[@]}" libncurses-dev rsync zip
+      - name: Validate toolchain and build selected profile
+        env:
+          PROFILE_MODE: ${{ inputs.mode }}
+        run: bash .lisa/build-validated-native.sh "$PROFILE_MODE"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: lisa-validated-native-${{ github.run_id }}
+          path: |
+            dist/lisa/Image
+            dist/lisa/*config*
+            dist/lisa/*info*
+            dist/lisa/Module.symvers
+            dist/lisa/System.map
+            dist/lisa/SHA256SUMS
+            dist/lisa/validated-profile.json
+            dist/lisa/*.log
+          retention-days: 7

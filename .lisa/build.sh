@@ -31,7 +31,7 @@ export KBUILD_BUILD_USER=ylmzer
 export LOCALVERSION=""
 export KBUILD_BUILD_HOST=lisa-builder
 export KBUILD_BUILD_VERSION=1
-export KBUILD_BUILD_TIMESTAMP="$(git show -s --format=%cD HEAD)"
+export KBUILD_BUILD_TIMESTAMP="${LISA_VALIDATED_BUILD_TIMESTAMP:-$(git show -s --format=%cD HEAD)}"
 ARGS=(O="$OUT" ARCH=arm64 TARGET_PRODUCT=lisa LLVM=1 LLVM_IAS=1
   CC="$KERNEL_CC" LD="ld.lld${LLVM_SUFFIX}"
   AR="llvm-ar${LLVM_SUFFIX}" NM="llvm-nm${LLVM_SUFFIX}"
@@ -82,6 +82,9 @@ fi
 cp "$OUT/.config" "$DIST/requested.config"
 make "${ARGS[@]}" olddefconfig 2>&1 | tee "$DIST/config.log"
 cp "$OUT/.config" "$DIST/resolved.config"
+if [ "${LISA_BUILD_PROFILE:-}" = validated-native-20261023 ]; then
+  python3 .lisa/validate_native_profile.py config
+fi
 KERNEL_RELEASE=$(make -s "${ARGS[@]}" kernelrelease)
 [ "$KERNEL_RELEASE" = '5.4.302-HyperOSPro' ] || {
   echo "Unexpected kernel release: $KERNEL_RELEASE" >&2; exit 1;

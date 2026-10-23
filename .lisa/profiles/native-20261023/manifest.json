@@ -1,0 +1,109 @@
+{
+  "profile": "validated-native-20261023",
+  "reference_source_commit": "d324d2db801fd28c2c9bc651ddf99e6248535279",
+  "reference_image_sha256": "dcb8eee804989141cafb41d842c0ce2ecba8e6823f001c15f6630ddc9c164f1b",
+  "reference_boot_sha256": "9c8b458ed41f0e901e31af93fca750a47255a47f3f95dc191c8a0fb0606f089f",
+  "ubuntu_version": "22.04",
+  "host_arch": "amd64",
+  "build_timestamp": "Fri, 23 Oct 2026 10:49:48 +0000",
+  "build_user": "ylmzer",
+  "build_host": "lisa-builder",
+  "build_version": 1,
+  "jobs": 2,
+  "linker_flags": [
+    "--threads=1",
+    "--thinlto-jobs=1"
+  ],
+  "environment": {
+    "IORAP_NATIVE": "1",
+    "IORAP_INTEGRATION": "1",
+    "IORAP_TEST": "0",
+    "BOOT_LOG": "0",
+    "ZYGOTE_DIAG": "0",
+    "USE_CCACHE": "0",
+    "LLVM_SUFFIX": "-14"
+  },
+  "files": {
+    "resolved.config": "240a6fd068d242869dee042894ab2d4b0c9f55c6d5e4167652cc682531a33e0e",
+    "Module.symvers": "6e74f073af81cccbe078ff1628c05f924c5b0c699411cb56b94d40ad80d8ffc0"
+  },
+  "tools": {
+    "clang-14": {
+      "path": "/usr/bin/clang-14",
+      "sha256": "31925065812631303cf9af9a30b2f56427d2102667a87a9fb4ba03a306104589"
+    },
+    "clang++-14": {
+      "path": "/usr/bin/clang++-14",
+      "sha256": "31925065812631303cf9af9a30b2f56427d2102667a87a9fb4ba03a306104589"
+    },
+    "ld.lld-14": {
+      "path": "/usr/bin/ld.lld-14",
+      "sha256": "13646c8b08b0c28e51cd6d4ab2e916ca5b30c82af9681fd3cc9524be7fa965c2"
+    },
+    "llvm-ar-14": {
+      "path": "/usr/bin/llvm-ar-14",
+      "sha256": "08a0bd821e1bd875fa567f4867220426a05abb3e0833d445de86eecef2238304"
+    },
+    "llvm-nm-14": {
+      "path": "/usr/bin/llvm-nm-14",
+      "sha256": "7fa17b45f0ca7cf3599cc5fbb133a3ced8f41af0f67ace03664c4a65b8a445b3"
+    },
+    "llvm-objcopy-14": {
+      "path": "/usr/bin/llvm-objcopy-14",
+      "sha256": "b130d3059c778edbbdbc8933ccb55a35096f1419606ddde8f179a556c4530384"
+    },
+    "llvm-objdump-14": {
+      "path": "/usr/bin/llvm-objdump-14",
+      "sha256": "6bc80ae7c0532e8c53320090e2ddb7422c9cffbaa73d2b022a026dc67939883b"
+    },
+    "llvm-strip-14": {
+      "path": "/usr/bin/llvm-strip-14",
+      "sha256": "b130d3059c778edbbdbc8933ccb55a35096f1419606ddde8f179a556c4530384"
+    },
+    "llvm-readelf-14": {
+      "path": "/usr/bin/llvm-readelf-14",
+      "sha256": "4a48511ab1373e0a884ecfcf60bbb026cdc17ab18b9c8c22a8dee51496710b04"
+    },
+    "aarch64-linux-gnu-gcc": {
+      "path": "/usr/bin/aarch64-linux-gnu-gcc",
+      "sha256": "70a2d6626629079a8d94b97184b121d4e3a1bfe880c44e7db30670bb73e4028e"
+    },
+    "arm-linux-gnueabi-gcc": {
+      "path": "/usr/bin/arm-linux-gnueabi-gcc",
+      "sha256": "2229f3e0331fa1d2a1258de88c992d5dcf39594c5ff958412a56d8f14a9584aa"
+    },
+    "gcc": {
+      "path": "/usr/bin/gcc",
+      "sha256": "821af3c74506283c179ca413bb33e6b528805a4dd8a5c09df125e5ad560a9e89"
+    }
+  },
+  "toolchain_libraries": {
+    "/usr/lib/x86_64-linux-gnu/libLLVM-14.so.1": "ccce431f05a3d35ef57db281637506c793731c5b7ca08c7e0f6a7b5d5fdc97c7",
+    "/usr/lib/llvm-14/lib/libclang-cpp.so.14": "3f913de9188588a5c04240f6814a6d3020f6a1075e956fb59f680e6a4958ccd1"
+  },
+  "packages": {
+    "clang-14": "1:14.0.0-1ubuntu1.1",
+    "lld-14": "1:14.0.0-1ubuntu1.1",
+    "llvm-14": "1:14.0.0-1ubuntu1.1",
+    "libllvm14": "1:14.0.0-1ubuntu1.1",
+    "libclang-cpp14": "1:14.0.0-1ubuntu1.1",
+    "libclang-common-14-dev": "1:14.0.0-1ubuntu1.1",
+    "gcc-aarch64-linux-gnu": "4:11.2.0-1ubuntu1",
+    "gcc-arm-linux-gnueabi": "4:11.2.0-1ubuntu1",
+    "gcc-11-aarch64-linux-gnu": "11.4.0-1ubuntu1~22.04.3cross1",
+    "gcc-11-arm-linux-gnueabi": "11.4.0-1ubuntu1~22.04.3cross1",
+    "binutils-aarch64-linux-gnu": "2.38-4ubuntu2.12",
+    "binutils-arm-linux-gnueabi": "2.38-4ubuntu2.12",
+    "libc6-dev-arm64-cross": "2.35-0ubuntu1cross3",
+    "make": "4.3-4.1build1",
+    "bc": "1.07.1-3build1",
+    "bison": "2:3.8.2+dfsg-1ubuntu0.22.04.1",
+    "flex": "2.6.4-8build2",
+    "libssl-dev": "3.0.2-0ubuntu1.30",
+    "libelf-dev": "0.186-1ubuntu0.1",
+    "cpio": "2.13+dfsg-7ubuntu0.2",
+    "xz-utils": "5.2.5-2ubuntu1.2"
+  },
+  "anykernel_commit": "020dfeccf9d7e962a48400fc94d3e451df92eead",
+  "binary_identity_required": false
+}
