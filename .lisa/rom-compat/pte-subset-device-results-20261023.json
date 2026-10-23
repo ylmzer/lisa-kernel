@@ -1,0 +1,58 @@
+{
+  "app": {
+    "source_commit": "d324d2db801fd28c2c9bc651ddf99e6248535279",
+    "cold_snapshots": [
+      {
+        "files": 440,
+        "events": 50946
+      },
+      {
+        "files": 442,
+        "events": 52070
+      }
+    ],
+    "both_render_attached": true,
+    "file_preread": {
+      "files": 440,
+      "logged_size": "194M",
+      "logged_ms": 195
+    },
+    "warm_same_pid": 15707,
+    "pte_verified_subset_advice": {
+      "selected_chunks": 1088,
+      "excluded_stale_chunks": 6,
+      "advised_ranges": 2421
+    },
+    "iorap_pid_before_after": 2071,
+    "selinux": "Enforcing",
+    "no_collect_ebusy_or_stop_estale_in_observed_window": true,
+    "owned_fixture_acceptance_pending": true,
+    "physical_page_residency_and_checksum_not_proven": true,
+    "full_original_pte_plan_not_claimed": true,
+    "long_term_stability_and_performance_pending": true
+  },
+  "owned_fixture": {
+    "kernel_commit": "d324d2db801fd28c2c9bc651ddf99e6248535279",
+    "owned_anonymous_bytes": 33554432,
+    "page_size": 4096,
+    "initial_resident_pages": 8192,
+    "after_owned_pageout_resident_pages": 25,
+    "before_checksum_read_after_preread_resident_pages": 8192,
+    "elapsed_us": 19393,
+    "fixture_checksum_equality_pass": true,
+    "fixture_source": "rom-helper-integration/lisa_iorap_legacy_device_test.h",
+    "fixture_source_sha256": "6146aa5bc7c3a82d32e3d2a06f88906855335ba7ef0b695bd992a730e5ddc638",
+    "kernel_advice_pid": 17945,
+    "selected_chunks": 27,
+    "excluded_stale_chunks": 0,
+    "advised_ranges": 76,
+    "enforcing": true,
+    "iorap_pid_unchanged": 2071,
+    "global_cache_or_swap_reset": false,
+    "limits": [
+      "Single owned32MiB fixture verifies RAM residency increase before data read and checksum equality",
+      "Not full original app PTE plan completion",
+      "Not long-term stability or application performance benchmark"
+    ]
+  }
+}

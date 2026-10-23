@@ -23,3 +23,13 @@ Remaining repeated COLLECT EBUSY diagnosed with live procfs: active PID15940 TGI
 ## PTE diagnostic6f45f1369 device result
 
 2026-10-23: actual samePID15460 HOT resume rejected at stage=vma chunk669: missing0/start_changed0/end_changed1/anon_changed0/file0/unreadable0. Snapshot1162chunks48721pages. End direction not recorded; growth vs shrink not established. Enforcing iorapd2066, HALmark/readback passed. Cold snapshots436/443files passed but one of two render notifications again returned EBUSY; earlier3-start success is not universal acceptance. No guard was changed in diagnostic6f. PTE and intermittent startup render attachment still need fixes.
+
+## Validated PTE subset and owned-memory test, 2026-10-23
+
+Source d324d2db801fd28c2c9bc651ddf99e6248535279 passed strict local build verification (clean source, exact CI39631762622 configuration, all Module.symvers CRCs unchanged, TEST=n, diagnostic endpoint absent, required symbols, ZIP CRC and SHA manifests). Binary identity with CI is not claimed.
+
+On the installed kernel, two actual X cold launches captured 440/442 files (50946/52070 events); both live render notifications attached. File replay logged 194M in 195ms. Same-PID15707 hot resume advised 1088 verified chunks, explicitly excluded 6 stale chunks, and issued 2421 advice ranges. This completes a verified subset, not the original full plan.
+
+The existing disabled init oneshot then tested only its own32MiB anonymous mapping under Enforcing: 8192 resident pages initially, 25 after owned MADV_PAGEOUT, 8192 after PTE preread before checksum read. Checksum equality passed. Kernel logged selected27/excluded0/advised76 for fixturePID17945; elapsed19393us. Native iorapPID2071 remained unchanged. No global cache drop, swap reset, app-data wipe, permissive mode or identity-guard bypass.
+
+HIDL1.1 real markBootSuccessful and successful-slot readback passed again. The ROM integration retains the tested FPC exact-node policy and dedicated HAL test helper; the production system BootControlClient library is not replaced. VoWiFi is unvalidated and excluded. Long-term stability and comparative performance are pending.
